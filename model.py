@@ -1,55 +1,87 @@
-from statistics import mode
 from torch import nn
 import torch
-import pandas as pd
-from dataloader import QADataset, MyDataLoader, load_data
-from transformers import BertTokenizer, BertModel
+from dataloader import QADataset, MyDataLoader
+from transformers import BertModel
 
+
+'''
+    基于bert finetune的问题匹配模型
+'''
+
+# Custom Contrastive Loss
+class ContrastiveLoss(torch.nn.Module):
+    """
+    Contrastive loss function.
+    Based on: http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
+    """
+
+    def __init__(self, margin=2.0):
+        super(ContrastiveLoss, self).__init__()
+        self.margin = margin
+
+    def forward(self, output1, output2, label):
+        
+        euclidean_distance = torch.pairwise_distance(output1, output2)
+        loss_contrastive = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +
+                                      (label) * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2))
+
+        return loss_contrastive
 
 
 class BertSimilarity(nn.Module):
     def __init__(self):
         super(BertSimilarity, self).__init__()
-        self.templates = list(pd.read_csv('logs/Spark/spark_2k.log_templates.csv')['EventTemplate'])
         self.bert = BertModel.from_pretrained('bert-base-uncased')
-        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         self.dropout = nn.Dropout(0.1)
         self.linear = nn.Linear(768, 768)
+        self.clf = nn.Sequential(
+            nn.Dropout(0.1),
+            nn.Linear(768, 768),
+            nn.LeakyReLU(),
+            nn.Linear(768, 64),
+        )
+        self.sim_layer = nn.Linear(64*2, 1)
         self.softmax = nn.Softmax(dim=1)
-        for param in self.bert.parameters():
+
+        # 不冻结bert最后2层
+        unfreeze_layers = ['layer.10', 'layer.11', 'pooler']
+        for name, param in self.bert.named_parameters():
             param.requires_grad = False
+            for layer in unfreeze_layers:
+                if layer in name:
+                    param.requires_grad = True
+                    # print(name) 
+    
+    def forward_once(self, input_token):
+        embeds = self.bert(**input_token).last_hidden_state[:, -1] # (batch_size, 768)
+        embeds = self.clf(embeds)  
+        return embeds
 
-    def forward(self, x1):
-        batch_size = len(x1)
-        x1_token = self.tokenizer(x1, max_length=512, padding=True, truncation=True, return_tensors='pt')
-        x1_embeds = self.bert(**x1_token).last_hidden_state[:, -1] # (batch_size, 768)
-        x1_embeds = self.dropout(x1_embeds)
-        x1_embeds = self.linear(x1_embeds)
-
-        x2_token = self.tokenizer(self.templates, max_length=512, padding=True, truncation=True, return_tensors='pt')
-        x2_embeds = self.bert(**x2_token).last_hidden_state[:, -1] # (batch_size, 768)
-        x2_embeds = self.dropout(x2_embeds)
-        x2_embeds = self.linear(x2_embeds)
-
-        similarity = torch.zeros(batch_size, len(self.templates)) # (batch_size, num_templates)
-        for i in range(batch_size):
-            similarity[i] = torch.cosine_similarity(x1_embeds[i].unsqueeze(0), x2_embeds) # 35
-        similarity_prob = self.softmax(similarity)
-        return similarity_prob
+    def forward(self, question_token, templates_token):
+        q_embed = self.forward_once(question_token)
+        t_embed = self.forward_once(templates_token)
+    
+        return q_embed, t_embed
 
 # 训练模型
 def train(model, dataloader, optimizer, criterion, device='cuda'):
     model.train()
     model = model.to(device)
+    criterion = criterion.to(device)
     loss_total = 0
-    for i, (question, event) in enumerate(dataloader):
-        event = event.cuda()
+    for i, (questions, event, label) in enumerate(dataloader):
+        for key in questions:
+            questions[key] = questions[key].to(device)
+        for key in event:
+            event[key] = event[key].to(device)
+        label = label.to(device)
+        
         optimizer.zero_grad()
-        similarity_prob = model(question)
-        loss = criterion(similarity_prob, event)
+        q_embed, e_embed = model(questions, event)
+        loss = criterion(q_embed, e_embed, label)
         loss.backward()
         optimizer.step()
-        loss_total += loss.cpu.item()
+        loss_total += loss.cpu().item()
     return loss_total / len(dataloader)
 
 def evaluate(model, dataloader, device='cuda'):
@@ -63,13 +95,12 @@ def evaluate(model, dataloader, device='cuda'):
     return loss_total / len(dataloader)
 
 if __name__ == '__main__':
-    qa_data = load_data('./logs/Spark/spark_multihop_qa_v2.json')
-    dataset = QADataset(qa_data)
+    dataset = QADataset()
     dataloader = MyDataLoader(dataset, batch_size=5, shuffle=True, num_workers=0)
     model = BertSimilarity()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    criterion = nn.CrossEntropyLoss()
-    for epoch in range(10):
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    criterion = ContrastiveLoss()
+    for epoch in range(20):
         loss = train(model, dataloader, optimizer, criterion)
         print('Epoch: %d, Loss: %.3f' % (epoch, loss))
         if (epoch+1) % 2 == 0:

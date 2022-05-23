@@ -1,7 +1,7 @@
 import json
 import random
 import Levenshtein as le
-from gensim.summarization import bm25
+# from gensim.summarization import bm25
 import numpy as np
 from collections import Counter
 from transformers import BertTokenizer, BertModel
@@ -159,6 +159,7 @@ def get_similarity_logs(question: str, logs: list, similarity:str, dataset: str=
         "Jaro": {"func": le.jaro, "reverse": True},  # higher is best
         "jaro_winkler": {"func": le.jaro_winkler, "reverse": True}, # higher is best
         "consine": {"func": None, "reverse": True}, # higher is best
+        "mybert": {"func": None, "reverse": True}, # higher is best
     }
 
     if similarity == 'random':
@@ -169,20 +170,28 @@ def get_similarity_logs(question: str, logs: list, similarity:str, dataset: str=
         docs = []
         for log in logs:
             docs.append(log.split())
-        # model = BM25_Model(docs)
-        # topk_similarity_pairs = model.get_documents_score(question, metrics[similarity]['reverse'])[:top_k]
-        # topk_similarity_logs = [pair[1] for pair in topk_similarity_pairs]
-        model = bm25.BM25(docs)
-        score_list = []
-        for i, log in enumerate(logs):
-            score = model.get_score(question, i)
-            score_list.append((score, log))
-        score_list = sorted(score_list, key=lambda x: x[0], reverse=True)
-        similarity_logs = [pair[1] for pair in score_list]
+        model = BM25_Model(docs)
+        similarity_pairs = model.get_documents_score(question, metrics[similarity]['reverse'])
+        similarity_logs = [pair[1] for pair in similarity_pairs]
+        
+        # model = bm25.BM25(docs)
+        # score_list = []
+        # for i, log in enumerate(logs):
+        #     score = model.get_score(question, i)
+        #     score_list.append((score, log))
+        # score_list = sorted(score_list, key=lambda x: x[0], reverse=True)
+        # similarity_logs = [pair[1] for pair in score_list]
         return similarity_logs
 
     if similarity == 'cosine':
         score_list = bert_method(question, logs, dataset, tokenizer, bert_model)
+        score_list = sorted(score_list, key=lambda x: x[0], reverse=True)
+        similarity_logs = [pair[1] for pair in score_list]
+
+        return similarity_logs
+    
+    if similarity == 'mybert':
+        score_list = my_bert(question, logs, dataset, tokenizer, bert_model)
         score_list = sorted(score_list, key=lambda x: x[0], reverse=True)
         similarity_logs = [pair[1] for pair in score_list]
 
@@ -198,7 +207,24 @@ def get_similarity_logs(question: str, logs: list, similarity:str, dataset: str=
     similarity_logs = [pair[1] for pair in topk_similarity_pairs]
     return similarity_logs
 
+@torch.no_grad()
+def my_bert(question: str, logs: list, dataset: str='', tokenizer=None, bert_model=None) -> list:
 
+    with open('./logs/{}/event2vec_mybert.json'.format(dataset),'r')as f:
+        log2vec = json.load(f)    
+    
+    question_input = tokenizer(question, max_length=512, padding=True, truncation=True, return_tensors="pt")
+    question_vec = bert_model.forward_once(question_input)
+    question_vec = question_vec.detach().numpy()
+    logs_vec = []
+    for log in logs:
+        logs_vec.append(log2vec[log])
+    similarity_list = []
+    for i, log_vec in enumerate(logs_vec):
+        score = cosine_similarity(question_vec, log_vec)
+        similarity_list.append((score, logs[i]))
+        
+    return similarity_list
 
 
 if __name__ == '__main__':

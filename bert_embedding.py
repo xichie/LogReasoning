@@ -5,7 +5,12 @@ import pandas as pd
 from transformers import BertTokenizer, BertModel
 import torch
 from tqdm import tqdm
+from model import BertSimilarity
 random.seed(1234)
+
+
+
+
 
 @torch.no_grad()
 def bert_embedding(logs_file: str):
@@ -21,6 +26,23 @@ def bert_embedding(logs_file: str):
         log_vec = log_output.last_hidden_state.squeeze()[-1]  # used last state to instead of the text
         d[raw['EventTemplate']] = log_vec.detach().tolist()
     with open('./logs/Spark/event2vec.json', 'w') as f:
+        json.dump(d, f)
+        
+@torch.no_grad()
+def my_bert_embedding(logs_file: str):
+    logs = load_logs(logs_file)
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    model = BertSimilarity()
+    model.load_state_dict(torch.load('./logs/Spark/bert.pth'))
+    
+    d = {}
+    for index, raw in tqdm(logs.iterrows()):
+        # print(log)
+        log_input = tokenizer(raw['EventTemplate'], max_length=512, padding=True, truncation=True, return_tensors="pt")
+       
+        log_vec = model.forward_once(log_input)
+        d[raw['EventTemplate']] = log_vec.squeeze().detach().tolist()
+    with open('./logs/Spark/event2vec_mybert.json', 'w') as f:
         json.dump(d, f)
 
 def load_json(fn:str) -> list:
@@ -67,4 +89,4 @@ def load_qa(qa_file:str) -> dict:
     return datasets
 
 if __name__ == '__main__':
-    bert_embedding('./logs/Spark/spark_2k.log_templates.csv')
+    my_bert_embedding('./logs/Spark/spark_2k.log_templates.csv')

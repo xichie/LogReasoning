@@ -1,31 +1,68 @@
-import re
+from nis import cat
 import torch
 from torch.utils.data import Dataset, DataLoader
 from utils import read_json, read_csv
 import pandas as pd
-# 读取qa数据
-def load_data(file_path):
-    qa_data = read_json(file_path)
-    return qa_data
+from transformers import BertTokenizer, BertModel
+import numpy as np
 
-
+'''
+    输出应该是一个三元组
+    (question_token, templates_token, label)
+    question_token: 问题bert模型的输入
+    templates_token: 一个随机的日志事件
+    label: 0代表正例(两者应该相似), 1代表负例(两者不相似)
+'''
 
 
 # 定义一个类，继承Dataset
 class QADataset(Dataset):
-    def __init__(self, qa_data):
+    def __init__(self):
+        # 加载qa数据
+        qa_data = read_json('./logs/Spark/spark_multihop_qa_v2.json')
+        # 加载所有的日志事件
         log_templates = pd.read_csv('logs/Spark/spark_2k.log_templates.csv')
-        eventId2index = {row['EventId'] : index for index, row in log_templates.iterrows()}
-        self.question = []
-        self.event = []
+        self.templates = list(log_templates['EventTemplate'])
+        self.events_count = len(log_templates)
+        # Bert tokenizer
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        self.templates_token = tokenizer(self.templates, max_length=512, padding=True, truncation=True, return_tensors='pt')
+        # 日志事件 -> index
+        self.eventId2index = {row['EventId'] : index for index, row in log_templates.iterrows()}
+        
+        questions = []
+        events = []
         for qa in qa_data: 
-            self.question.append(qa['Question'])
-            self.event.append(eventId2index[qa['Events'][0]])
-        self.len = len(self.question)
-        # self.question = torch.Tensor(self.question)
-        self.event = torch.LongTensor(self.event)
+            questions.append(qa['Question'])
+            events.append(self.eventId2index[qa['Events'][0]])
+
+        self.q_token = tokenizer(questions, max_length=512, padding=True, truncation=True, return_tensors='pt')
+        self.len = len(questions)
+        self.events = events
+        
     def __getitem__(self, index):
-        return self.question[index], self.event[index]
+        batch_size = index.stop - index.start
+        
+        pos_num = int(batch_size * 0.5) # 正类样本数量
+        neg_num = batch_size - pos_num # 负类样本数量
+        
+        q_token_ = {}
+        for key in self.q_token.keys():
+            q_token_[key] = self.q_token[key][index]
+
+        # 随机挑选neg_num个日志事件, 作为负类样本
+        neg_index = np.random.randint(0, self.events_count, neg_num)
+        pos_index = self.events[index][neg_num:]
+        selected_index = np.concatenate((neg_index, pos_index))
+        
+        t_token = {}
+        for key in self.templates_token.keys():
+            t_token[key] = self.templates_token[key][selected_index]
+        
+        label = torch.LongTensor(np.array(self.events[index]) != np.array((selected_index)))
+      
+        return q_token_, t_token,  label
+    
     def __len__(self):
         return self.len
 
@@ -40,10 +77,11 @@ class MyDataLoader(DataLoader):
 
 
 if __name__ == '__main__':
-    qa_data = load_data('./logs/Spark/spark_multihop_qa_v2.json')
-    dataset = QADataset(qa_data)
-    dataloader = MyDataLoader(dataset, batch_size=5, shuffle=True, num_workers=0)
-    for i, (question, event) in enumerate(dataloader):
-        print(question)
-        print(event)
+    
+    dataset = QADataset()
+    dataloader = MyDataLoader(dataset, batch_size=10, shuffle=True, num_workers=0)
+    for i, (question, event, label) in enumerate(dataloader):
+        print(question['input_ids'].size())
+        print(event['input_ids'].size())
+        print(label.size())
         break
