@@ -35,14 +35,14 @@ def match_question_event(similarity_metric='Jaro'):
 
 if __name__ == '__main__':
     similarity_list = [
-        "random",
-        "Edit_Distance",
-        "jaccard",
-        "BM25",
+        # "random",
+        # "Edit_Distance",
+        # "jaccard",
+        # "BM25",
         # "Jaro",
         # "jaro_winkler",
         # "cosine",
-        # 'mybert',
+        'mybert',
     ]
     result = {'similarity_metric': [], 'accuracy': []}
     for similarity_metric in similarity_list:

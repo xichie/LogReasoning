@@ -12,7 +12,7 @@ def plot_match_question_event_acc():
     
     # 显示数字
     for a, b in zip(df['similarity_metric'], df['accuracy']):
-        plt.text(a, b, '%.2f' % b, ha='center', va='bottom', fontsize=10)
+        plt.text(a, b, '%.2f' % b, ha='center', va='bottom', fontsize=6)
     
     plt.title('Spark Match Question Event Accuracy')
     plt.ylabel('Accuracy')

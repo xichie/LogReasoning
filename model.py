@@ -22,6 +22,7 @@ class ContrastiveLoss(torch.nn.Module):
     def forward(self, output1, output2, label):
         
         euclidean_distance = torch.pairwise_distance(output1, output2)
+        # cos_distance = torch.cosine_similarity(output1, output2) + 1.0
         loss_contrastive = torch.mean((1 - label) * torch.pow(euclidean_distance, 2) +
                                       (label) * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2))
 
@@ -96,11 +97,11 @@ def evaluate(model, dataloader, device='cuda'):
 
 if __name__ == '__main__':
     dataset = QADataset()
-    dataloader = MyDataLoader(dataset, batch_size=5, shuffle=True, num_workers=0)
+    dataloader = MyDataLoader(dataset, batch_size=10, shuffle=True, num_workers=0)
     model = BertSimilarity()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     criterion = ContrastiveLoss()
-    for epoch in range(20):
+    for epoch in range(50):
         loss = train(model, dataloader, optimizer, criterion)
         print('Epoch: %d, Loss: %.3f' % (epoch, loss))
         if (epoch+1) % 2 == 0:

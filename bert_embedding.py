@@ -89,4 +89,4 @@ def load_qa(qa_file:str) -> dict:
     return datasets
 
 if __name__ == '__main__':
-    my_bert_embedding('./logs/Spark/spark_2k.log_templates.csv')
+    bert_embedding('./logs/Spark/spark_2k.log_templates.csv')
