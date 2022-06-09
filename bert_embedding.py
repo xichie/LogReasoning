@@ -8,10 +8,6 @@ from tqdm import tqdm
 from model import BertSimilarity
 random.seed(1234)
 
-
-
-
-
 @torch.no_grad()
 def bert_embedding(logs_file: str):
     logs = load_logs(logs_file)
@@ -89,4 +85,4 @@ def load_qa(qa_file:str) -> dict:
     return datasets
 
 if __name__ == '__main__':
-    bert_embedding('./logs/Spark/spark_2k.log_templates.csv')
+    my_bert_embedding('./logs/Spark/spark_2k.log_templates.csv')
