@@ -1,0 +1,9 @@
+,similarity_metric,accuracy
+0,Random,0.0325
+1,Edit_Distance,0.19
+2,Jaccard,0.105
+3,BM25,0.0025
+4,Jaro,0.365
+5,Jaro_winkler,0.365
+6,Bert_cosine,0.0325
+7,Mybert_cosine,0.995
