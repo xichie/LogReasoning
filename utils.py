@@ -209,16 +209,23 @@ def get_similarity_logs(question: str, logs: list, similarity:str, dataset: str=
 
 @torch.no_grad()
 def my_bert(question: str, logs: list, dataset: str='', tokenizer=None, bert_model=None) -> list:
-
-    with open('./logs/{}/event2vec_mybert.json'.format(dataset),'r')as f:
-        log2vec = json.load(f)    
-    
     question_input = tokenizer(question, max_length=512, padding=True, truncation=True, return_tensors="pt")
     question_vec = bert_model.forward_once(question_input)
     question_vec = question_vec.detach().numpy()
+    
     logs_vec = []
-    for log in logs:
-        logs_vec.append(log2vec[log])
+    if not dataset == '': 
+        with open('./logs/{}/event2vec_mybert.json'.format(dataset),'r')as f:
+            log2vec = json.load(f)    
+        for log in logs:
+            logs_vec.append(log2vec[log])
+    else:
+        for log in logs:
+            log_input = tokenizer(log, max_length=512, padding=True, truncation=True, return_tensors="pt")
+            log_vec = bert_model.forward_once(log_input)
+            log_vec = log_vec.detach().numpy()
+            logs_vec.append(log_vec)
+        
     similarity_list = []
     for i, log_vec in enumerate(logs_vec):
         score = cosine_similarity(question_vec, log_vec)
