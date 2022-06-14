@@ -7,7 +7,7 @@
 
 | 按规则匹配      | Accuracy |
 | :----------- | :----------- |
-| Spark      | 0.9873737373737373 |
+| Spark      | 0.648989898989899 |
 
 4. 训练QANet提取事件中答案的位置: cd QANet-pytorch-/ python main.py --mode data   python main.py --mode train
 5. 评估QANet的结果，并保存每个问题对应答案在日志事件中的位置: cd QANet-pytorch-/ python main.py --mode test

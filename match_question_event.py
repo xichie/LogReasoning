@@ -11,7 +11,7 @@ from collections import Counter
 import string
 import json
 
-# 根据问题匹配的事件，过滤日志
+# 根据问题匹配的事件，过滤日志 (rule-based)
 def filter_logs_by_event(similarity_metric='mybert'):
     acc, qe = match_question_event(similarity_metric)
     df = pd.read_csv('./logs/Spark/spark_2k.log_structured.csv')
@@ -34,6 +34,7 @@ def filter_logs_by_event(similarity_metric='mybert'):
                 if token in log_token:
                     counter[token] += 1
         counter = sorted(counter.items(), key=lambda x: x[1], reverse=True)
+         
         q_token = []
         for token, count in counter:
             if count == 0:
@@ -50,7 +51,8 @@ def filter_logs_by_event(similarity_metric='mybert'):
                 for i in range(len(log_token) - 1):
                     if log_token[i] == token and log_token[i + 1] == q_token[-1] and substr in q:
                         filter_logs[q].append(log)
-                    
+    
+    # 保存结果               
     f = open('logs/Spark/spark_question_logs_filter.json', 'w')
     for q, logs in filter_logs.items():
         q_logs = json.dumps({'Question': q, 'Logs': logs})
@@ -70,14 +72,17 @@ def evaluate_match_qlogs_accuracy():
         err_count = 0
         for line in f:
             qa_info = json.loads(line)
-            for log in results[idx]['Logs']:
-                if log not in qa_info['Logs']:
-                    err_count += 1
-                    # print(log)
-                    # print(qa_info['Logs'])
-                    print(idx)
-                    break
-                    # return
+            if len(results[idx]['Logs']) == 0:
+                err_count += 1
+                print(idx)
+            else:    
+                for log in results[idx]['Logs']:
+                    if log not in qa_info['Logs']:
+                        err_count += 1
+                        # print(log)
+                        # print(qa_info['Logs'])
+                        print(idx)
+                        break
             idx += 1
         print('accuracy:', 1 - err_count / len(results))
         
@@ -131,5 +136,5 @@ if __name__ == '__main__':
         
     # pd.DataFrame(result).to_csv('./logs/Spark/spark_match_question_event_acc.csv')
     
-    filter_logs_by_event()
+    # filter_logs_by_event()
     evaluate_match_qlogs_accuracy()
