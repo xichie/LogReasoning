@@ -7,6 +7,12 @@ from collections import Counter
 from transformers import BertTokenizer, BertModel
 # from sklearn.metrics.pairwise import cosine_similarity
 import torch
+import uuid
+
+# 生成UUID
+def generate_uuid(prefix):
+    uuid_ = prefix + '-' + str(uuid.uuid4())
+    return uuid_   
 
 # 按行,读取json文件
 def read_json(file_path):
