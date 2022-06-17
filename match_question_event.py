@@ -59,6 +59,7 @@ def filter_logs_by_event(similarity_metric='mybert'):
         f.write(q_logs + '\n')
     f.close()
 
+
 # 评估问题匹配日志的准确率
 def evaluate_match_qlogs_accuracy():
     results = []
