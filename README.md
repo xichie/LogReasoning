@@ -1,6 +1,8 @@
 # LogReasoning
 ## Pipline
 1. 训练问题-事件匹配模型: python model.py 
+
+![匹配结果](./results/Spark/spark_match_question_event_acc.png "结果比较")
 2. 保存每个事件对应的embedding: python bert_embedding.py
 3. 评估问题-事件匹配模型的的结果: python match_question_event.py
 4. 根据每个问题匹配的事件, 过滤原始logs, 保存过滤后的QA结果 
