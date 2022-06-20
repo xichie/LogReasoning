@@ -18,39 +18,48 @@ def filter_logs_by_event(similarity_metric='mybert'):
     exclude = [')', '(', ',', ':', '', '?']  # 将文本中的特殊符号替换
     
     filter_logs = {}
-    for q, e in qe.items():
+    for i, (q, e) in enumerate(qe.items()):
         filter_logs[q] = []
-        logs = df[df['EventId'] == e]['Content'].to_list()
+        logs = df[df['EventId'] == e]['Content'].to_list() # 对应事件的日志
         # 计算问题中每个单词在logs中出现的次数
         q_ = ''.join([c for c in q if c not in exclude])
-        q_ = q_.replace('_', ' ')
-        q_token = q_.split(' ')
+        # q_ = q_.replace('_', ' ')
+        q_token = q_.split()
         counter = {token: 0 for token in q_token}
         for log in logs:
-            log = ''.join(ch for ch in log if ch not in exclude)
-            log = log.replace('_', ' ')
-            log_token = log.split()
+            # log = ''.join(ch for ch in log if ch not in exclude)
+            # log = log.replace('_', ' ')
+            # log_token = log.split()
             for token in q_token:
-                if token in log_token:
+                if token in log:
                     counter[token] += 1
-        counter = sorted(counter.items(), key=lambda x: x[1], reverse=True)
-         
+        counter = sorted(counter.items(), key=lambda x: x[1], reverse=True) # 排序
+        
+        # 将问题中出现次数不为0的单词作为过滤条件
         q_token = []
         for token, count in counter:
             if count == 0:
                 continue
             q_token.append(token)
-        if len(q_token) == 0:
-            continue
-        for token in q_token[:-1]:
+        if len(q_token) == 0:  # 由于没有匹配到正确的事件，所以直接返回空列表
+            print(e)
+            print(q)
+        elif 'rdd' in q_token[-1]:  # 包含rdd的关键字的日志
             for log in logs:
-                log_ = ''.join(ch for ch in log if ch not in exclude)
-                log_ = log_.replace('_', ' ')
-                substr = token + ' ' + q_token[-1]
-                log_token = log_.split()
-                for i in range(len(log_token) - 1):
-                    if log_token[i] == token and log_token[i + 1] == q_token[-1] and substr in q:
-                        filter_logs[q].append(log)
+                if q_token[-1] in log:
+                    filter_logs[q].append(log)
+        else:   # 次数不为0的关键字两两组合     
+            for token in q_token[:-1]:
+                for log in logs:
+                    log_ = ''.join(ch for ch in log if ch not in exclude)
+                    log_ = log_.replace('_', ' ')
+                    substr = token + ' ' + q_token[-1]
+                    log_token = log_.split()
+                    for i in range(len(log_token) - 1):
+                        if log_token[i] == token and log_token[i + 1] == q_token[-1] and substr in q:
+                            filter_logs[q].append(log)
+        if len(filter_logs[q]) == 0:  # 没有通过关键字过滤，则不过滤
+            filter_logs[q] = logs
     
     # 保存结果               
     f = open('logs/Spark/spark_question_logs_filter.json', 'w')
@@ -104,7 +113,7 @@ def match_question_event(similarity_metric='Jaro'):
     total_count = 0
     qe = {} # question: event
     for qa_info in  tqdm(read_json('./logs/Spark/spark_multihop_qa_v3.json')):
-        if qa_info['Question'] in qe.keys():
+        if qa_info['Question'] in qe.keys(): # 查重
                 print(qa_info['Question'])
         most_similarity_events = get_similarity_logs(qa_info['Question'], log_events['EventTemplate'], similarity_metric, 'Spark', tokenizer, bert_model)
         most_similarity_eventIds = [event2id[event] for event in most_similarity_events]
@@ -137,5 +146,5 @@ if __name__ == '__main__':
         
     # pd.DataFrame(result).to_csv('./logs/Spark/spark_match_question_event_acc.csv')
     
-    # filter_logs_by_event()
+    filter_logs_by_event()
     evaluate_match_qlogs_accuracy()
