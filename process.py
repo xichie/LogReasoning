@@ -33,6 +33,29 @@ def labeled_question_position():
             print('保存了{}条数据'.format(i+1))
 
 
+'''
+    提取问题
+'''
+def save_question():
+    qa_data = read_json('./logs/Spark/spark_multihop_qa_v3.json')
+    with open('./logs/Spark/spark_multihop_questions.json', 'a') as f:
+        for qa_info in qa_data:
+            line = {}
+            q_token = qa_info['Question'].replace('?', '').split()
+            line['Question'] = q_token
+            jieci = ['of', 'by', 'in']
+            line['keywords'] = []
+            for jc in jieci:
+                if jc in q_token:
+                    idx = q_token.index(jc)
+                    line['keywords'] = q_token[idx+1: ]
+                    break
+            line['Answer_type'] = ''
+            line['Logs'] = qa_info['Logs']
+            
+            f.write(json.dumps(line, ensure_ascii=False) + '\n')
+            
+
 def convert_idx(text, tokens):
     current = 0
     spans = []
