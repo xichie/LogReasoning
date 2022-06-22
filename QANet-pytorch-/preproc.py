@@ -52,7 +52,7 @@ def _process_file(filename, data_type, word_counter, char_counter):
     examples = []
     eval_examples = {}
     total = 0 
-    raw_data = read_json('../logs/Spark/spark_multihop_qa_v3.json')
+    raw_data = read_json('../logs/Spark/spark_multihop_qa_v4.json')
     for idx, line in enumerate(raw_data):
         total += 1
         question = line['Question']
@@ -343,8 +343,8 @@ def save(filename, obj, message=None):
 
 
 def preproc(config):
-    train_data = '../logs/Spark/spark_multihop_squad_train.json'
-    test_data = '../logs/Spark/spark_multihop_squad_test.json'
+    train_data = '../logs/Spark/spark_multihop_qa_squad_train.json'
+    test_data = '../logs/Spark/spark_multihop_qa_squad_test.json'
     word_counter, char_counter = Counter(), Counter()
     train_examples, train_eval = process_file(train_data, "train", word_counter, char_counter)
     dev_examples, dev_eval = process_file(test_data, "dev", word_counter, char_counter)
@@ -376,12 +376,13 @@ def preproc(config):
 
 
 if __name__ == "__main__":
-    import os
-    word_counter, char_counter = Counter(), Counter()
-    home = os.path.expanduser(".")
-    target_dir = "data"
+    # import os
+    # word_counter, char_counter = Counter(), Counter()
+    # home = os.path.expanduser(".")
+    # target_dir = "data"
     # file_path = os.path.join(home, "data", "squad", "dev-v1.1.json")
     # train_path = os.path.join(home, "data", "squad", "train-v1.1.json")
-    spark_data = '../logs/Spark/spark_multihop_qa_squad.json'
-    dev_examples, dev_eval = _process_file(spark_data, "train", word_counter, char_counter)
-    print(word_counter)
+    # spark_data = '../logs/Spark/spark_multihop_qa_squad.json'
+    # dev_examples, dev_eval = _process_file(spark_data, "train", word_counter, char_counter)
+    # print(word_counter)
+    preproc()

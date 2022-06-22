@@ -1,8 +1,42 @@
 import json
-from lib2to3.pgen2 import token
+from tqdm import tqdm
 import pandas as pd
+from filter_logs_model import train
 from utils import read_json, generate_uuid
 
+'''
+    日志multihop qa数据v4 (最终版) 
+'''
+def save_multihop_qa():
+    qa_info = read_json('logs/Spark/spark_multihop_questions.json')
+    qa_info_v3 = read_json('logs/Spark/spark_multihop_qa_v3.json')
+    f = open('logs/Spark/spark_multihop_qa_v4.json', 'a+')
+    for qa1, qa2 in tqdm(zip(qa_info_v3, qa_info)):
+        qa1['Answer_type'] = qa2['Answer_type']
+        qa1['keywords'] = qa2['keywords']
+        f.write(json.dumps(qa1, ensure_ascii=False) + '\n')
+        
+
+'''
+    划分训练测试集
+'''
+def split_train_test():
+    questions = []
+    with open('./logs/Spark/spark_multihop_qa_v4.json') as f:
+        for line in f.readlines():
+            questions.append(json.loads(line))
+            
+    from sklearn.model_selection import train_test_split
+    train, test = train_test_split(questions, test_size=0.3, random_state=1)
+    print('train:', len(train))
+    print('test:', len(test))
+    with open('./logs/Spark/spark_multihop_qa_train.json', 'w') as f:
+        for line in train:
+            f.write(json.dumps(line, ensure_ascii=False) + '\n')
+
+    with open('./logs/Spark/spark_multihop_qa_test.json', 'w') as f:
+        for line in test:
+            f.write(json.dumps(line, ensure_ascii=False) + '\n')
 
 '''
     标记答案在日志模板中的位置
@@ -34,23 +68,18 @@ def labeled_question_position():
 
 
 '''
-    提取问题
+    提取问题, 做为Numerical Reasoning的输入
 '''
-def save_question():
-    qa_data = read_json('./logs/Spark/spark_multihop_qa_v3.json')
-    with open('./logs/Spark/spark_multihop_questions.json', 'a') as f:
-        for qa_info in qa_data:
+def save_question(multihop_qa_data, data_type):
+    # multihop_qa_data = read_json('./logs/Spark/spark_multihop_qa_v3.json')
+    with open('./logs/Spark/spark_multihop_questions_{}.json'.format(data_type), 'w') as f:
+        for qa_info in multihop_qa_data:
             line = {}
             q_token = qa_info['Question'].replace('?', '').split()
+            
             line['Question'] = q_token
-            jieci = ['of', 'by', 'in']
-            line['keywords'] = []
-            for jc in jieci:
-                if jc in q_token:
-                    idx = q_token.index(jc)
-                    line['keywords'] = q_token[idx+1: ]
-                    break
-            line['Answer_type'] = ''
+            line['keywords'] = qa_info['keywords']
+            line['Answer_type'] = qa_info['Answer_type']
             line['Logs'] = qa_info['Logs']
             
             f.write(json.dumps(line, ensure_ascii=False) + '\n')
@@ -71,7 +100,7 @@ def convert_idx(text, tokens):
 '''
     转为SQuAD格式
 ''' 
-def transfer2SquAD():
+def transfer2SquAD(multihop_qa_data, data_type='train'):
     templates_df = pd.read_csv('./logs/Spark/spark_2k.log_templates.csv')
     # 转化为字典, key为事件id, value为事件模板
     templates_dict = {}
@@ -79,8 +108,8 @@ def transfer2SquAD():
         templates_dict[row['EventId']] = row['EventTemplate']
     
     squad_data = []
-    raw_data = read_json('./logs/Spark/spark_multihop_qa_v3.json')
-    for idx, line in enumerate(raw_data):
+    # multihop_qa_data = read_json('./logs/Spark/spark_multihop_qa_v3.json')
+    for idx, line in enumerate(multihop_qa_data):
         
         question = line['Question']
         answer_idx = line['answer_start']
@@ -123,34 +152,17 @@ def transfer2SquAD():
             
         })
     squad_data = {'data': squad_data}
-    with open('./logs/Spark/spark_multihop_qa_squad.json', 'w') as f:
+    with open('./logs/Spark/spark_multihop_qa_squad_{}.json'.format(data_type), 'w') as f:
         f.write(json.dumps(squad_data, ensure_ascii=False) + '\n')
         
-    
-
-# 划分训练集和测试集
-def split_train_test():
-    with open('./logs/Spark/spark_multihop_qa_squad.json') as f:
-        raw_data = json.load(f)
-    
-    data = raw_data['data']
-    
-    from sklearn.model_selection import train_test_split
-    train, test = train_test_split(data, test_size=0.3, random_state=42)
-    print('train:', len(train))
-    print('test:', len(test))
-    with open('./logs/Spark/spark_multihop_squad_train.json', 'w') as f:
-        train_data = {'data': train}
-        f.write(json.dumps(train_data, ensure_ascii=False) + '\n')
-    with open('./logs/Spark/spark_multihop_squad_test.json', 'w') as f:
-        test_data = {'data': test}
-        f.write(json.dumps(test_data, ensure_ascii=False) + '\n')
 
 
 if __name__ == '__main__':
+    data_type = 'test'
     # transfer_rawlog_to_logs()
     # labeled_question_position()
-    # transfer2SquAD()
-    # split_train_test()
+    split_train_test()
+    transfer2SquAD(read_json('./logs/Spark/spark_multihop_qa_{}.json'.format(data_type)), data_type)
+    save_question(read_json('./logs/Spark/spark_multihop_qa_{}.json'.format(data_type)), data_type)
     # labeled_question_keyword()
-    save_question()
+    # save_multihop_qa()

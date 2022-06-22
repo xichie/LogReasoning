@@ -12,8 +12,7 @@ import string
 import json
 
 # 根据问题匹配的事件，过滤日志 (rule-based)
-def filter_logs_by_event(similarity_metric='mybert'):
-    acc, qe = match_question_event(similarity_metric)
+def filter_logs_by_event(qe, similarity_metric='mybert') -> dict:
     df = pd.read_csv('./logs/Spark/spark_2k.log_structured.csv')
     exclude = [')', '(', ',', ':', '', '?']  # 将文本中的特殊符号替换
     
@@ -42,8 +41,9 @@ def filter_logs_by_event(similarity_metric='mybert'):
                 continue
             q_token.append(token)
         if len(q_token) == 0:  # 由于没有匹配到正确的事件，所以直接返回空列表
-            print(e)
-            print(q)
+            pass
+            # print(e)
+            # print(q)
         elif 'rdd' in q_token[-1]:  # 包含rdd的关键字的日志
             for log in logs:
                 if q_token[-1] in log:
@@ -67,6 +67,7 @@ def filter_logs_by_event(similarity_metric='mybert'):
         q_logs = json.dumps({'Question': q, 'Logs': logs})
         f.write(q_logs + '\n')
     f.close()
+    return filter_logs
 
 
 # 评估问题匹配日志的准确率
@@ -77,7 +78,7 @@ def evaluate_match_qlogs_accuracy():
             q_logs = json.loads(line)
             results.append(q_logs)
     # print(results[31])
-    with open('./logs/Spark/spark_multihop_qa_v3.json', 'r') as f:
+    with open('./logs/Spark/spark_multihop_qa_v4.json', 'r') as f:
         idx = 0
         err_count = 0
         for line in f:
@@ -112,7 +113,7 @@ def match_question_event(similarity_metric='Jaro'):
     correct_count = 0
     total_count = 0
     qe = {} # question: event
-    for qa_info in  tqdm(read_json('./logs/Spark/spark_multihop_qa_v3.json')):
+    for qa_info in  tqdm(read_json('./logs/Spark/spark_multihop_qa_test.json')):
         if qa_info['Question'] in qe.keys(): # 查重
                 print(qa_info['Question'])
         most_similarity_events = get_similarity_logs(qa_info['Question'], log_events['EventTemplate'], similarity_metric, 'Spark', tokenizer, bert_model)

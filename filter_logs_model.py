@@ -43,7 +43,6 @@ class DistilbertForTokenClassification(nn.Module):
                 if layer in name:
                     param.requires_grad = True
                     # print(name) 
-            
                     
     def forward(self, inputs):
         output = self.model(**inputs)
@@ -56,11 +55,13 @@ class QuestionDataset(Dataset):
         qa_data = read_json('./logs/Spark/spark_multihop_questions_{}.json'.format(type))
         examples = {
             'tokens': [],
-            'ner_tags': []
+            'ner_tags': [],
+            'logs': [],
         }
         for qa_info in qa_data:
             question = qa_info['Question']
             keywords = qa_info['keywords']
+            logs = qa_info['Logs']
             label = [0] * len(question)
             for kw in keywords:
                 idx = question.index(kw)
@@ -68,6 +69,7 @@ class QuestionDataset(Dataset):
             
             examples['tokens'].append(question)
             examples['ner_tags'].append(label)
+            examples['logs'].append(logs)
             
         self.examples = examples
         if type == 'train':
@@ -133,7 +135,7 @@ def train(model, dataloader, optimizer, device='cuda'):
     return loss_total / len(dataloader)
 
 @torch.no_grad()
-def evaluate(model):
+def evaluate(model=None):
     print('Evaluating...')
     tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
     if model == None:
@@ -151,41 +153,44 @@ def evaluate(model):
             inputs[key] = inputs[key].cuda()
         output = model(inputs)
         loss += output.loss.cpu().item()
-        logits = output.logits
+        logits = output.logits   # (bs, seq_len, 2)
         pred_label = torch.argmax(logits, dim=2).cpu().numpy()
-    
+        # 通过关键字来判断acc
         for i, label in enumerate(examples['ner_tags']):
             length = len(label)
             label = np.array(label)
-            
-            if (pred_label[i][1:length+1] == label).all():
+            if (pred_label[i][1:length+1] == label).all(): # 判断是否全部正确 
                 correct += 1
-            else:
-                # print(label)
-                # print(pred_label[i][1:length+1])
-                # print(' '.join(examples['tokens'][i]))
-                pass
+            else: # 有关键字错误
+                print(label)
+                print(pred_label[i][1:length+1])
+                print(' '.join(examples['tokens'][i]))
+                print('-'*50)
+                # pass
             total += 1
-    
+        # 通过日志匹配的是否准确来判断acc
     print('Correct/Total:{}/{}, Accuracy:{}'.format(correct, total, correct/total))
     return loss
     
 if __name__ == '__main__':
     # split_train_test()
-    model = DistilbertForTokenClassification()
+    # model = DistilbertForTokenClassification()
     train_loader = QuestionDataLoader(QuestionDataset(type='train'), batch_size=16)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-    for epoch in range(100):
-        model.train()
-        train_loss = train(model, train_loader, optimizer)
-        test_loss = 0
-        if (epoch+1) % 20 == 0 and epoch > 50 :
-            optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] / 2
-            # 保存模型
-            torch.save(model.state_dict(), './logs/Spark/distilBert.pth')
-            # 评估模型
-            test_loss = evaluate(model)
-            print('Epoch:{}, Train Loss:{}, Test Loss:{}'.format(epoch, train_loss, test_loss))
-        print('Epoch: %d, Train Loss: %.3f' % (epoch, train_loss))
+    for example in train_loader:
+        print(example.keys())
+        break
+    # optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    # for epoch in range(100):
+    #     model.train()
+    #     train_loss = train(model, train_loader, optimizer)
+    #     test_loss = 0
+    #     if (epoch+1) % 20 == 0 and epoch > 50 :
+    #         optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] / 2
+    #         # 保存模型
+    #         torch.save(model.state_dict(), './logs/Spark/distilBert.pth')
+    #         # 评估模型
+    #         test_loss = evaluate(model)
+    #         print('Epoch:{}, Train Loss:{}, Test Loss:{}'.format(epoch, train_loss, test_loss))
+    #     print('Epoch: %d, Train Loss: %.3f' % (epoch, train_loss))
     # evaluate()
     

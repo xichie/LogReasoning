@@ -9,6 +9,19 @@ from transformers import BertTokenizer, BertModel
 import torch
 import uuid
 
+# 过滤list中数字
+def filter_digits(a:list) -> list:
+    b = []
+    for e in a:
+        try:
+            e = float(e)
+            b.append(e)
+        except:
+            pass
+    return b
+    
+
+
 # 生成UUID
 def generate_uuid(prefix):
     uuid_ = prefix + '-' + str(uuid.uuid4())
@@ -241,5 +254,6 @@ def my_bert(question: str, logs: list, dataset: str='', tokenizer=None, bert_mod
 
 
 if __name__ == '__main__':
-    logs = process.load_logs(fn=r'F:\LogQA\logs\HDFS\HDFS_2k.log_structured.csv')
+    b = filter_digits(['RE', '1', '2.0', 32])
+    print(b)
     
