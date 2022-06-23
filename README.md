@@ -25,3 +25,4 @@
 |    Method  | F1 | EM  |
 | :----------- | :----------- | :----------- |
 | LogReasoning(Rule-based)       | 0.739 | 0.739 |
+| LogReasoning(Rule-based)       | 0.529 | 0.529 |

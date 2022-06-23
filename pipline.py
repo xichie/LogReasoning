@@ -1,4 +1,5 @@
-from q2e import match_question_event, filter_logs_by_event
+from Q2E import match_question_event
+from QE2Log import rule_based_filter, model_based_filter
 from QEAnsPos import get_pos
 from question_clf import evaluate
 from utils import read_json, filter_digits
@@ -13,7 +14,8 @@ answer_type_mapping = {
 '''
 def main():
     q2e_acc, qe = match_question_event('mybert')  # (question, event)
-    filter_logs =  filter_logs_by_event(qe)  # (question, logs)
+    # filter_logs =  rule_based_filter(qe)  # (question, logs)
+    filter_logs =  model_based_filter(qe)  # (question, logs)
     position_dict = get_pos(qe) # (question, pos)
     # AnsPos2Num
     i = 1

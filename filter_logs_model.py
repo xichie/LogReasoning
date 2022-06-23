@@ -6,26 +6,6 @@ from transformers import AutoModelForTokenClassification
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 import numpy as np
-import json
-
-def split_train_test():
-    questions = []
-    with open('./logs/Spark/spark_multihop_questions.json') as f:
-        for line in f.readlines():
-            questions.append(json.loads(line))
-
-    
-    from sklearn.model_selection import train_test_split
-    train, test = train_test_split(questions, test_size=0.1, random_state=1)
-    print('train:', len(train))
-    print('test:', len(test))
-    with open('./logs/Spark/spark_multihop_questions_train.json', 'w') as f:
-        for line in train:
-            f.write(json.dumps(line, ensure_ascii=False) + '\n')
-
-    with open('./logs/Spark/spark_multihop_questions_test.json', 'w') as f:
-        for line in test:
-            f.write(json.dumps(line, ensure_ascii=False) + '\n')
 
 '''
     标记日志中的关键词(基于模型的预测)
@@ -147,6 +127,7 @@ def evaluate(model=None):
     dataloader = QuestionDataLoader(QuestionDataset('test'), batch_size=32)
     
     total, correct, loss = 0, 0, 0
+    key_words_all = []
     for i, examples in tqdm(enumerate(dataloader)):
         inputs = QuestionDataset.tokenize_and_align_labels(examples, tokenizer)
         for key in inputs:
@@ -157,8 +138,15 @@ def evaluate(model=None):
         pred_label = torch.argmax(logits, dim=2).cpu().numpy()
         # 通过关键字来判断acc
         for i, label in enumerate(examples['ner_tags']):
+            key_words = []
             length = len(label)
             label = np.array(label)
+            # 保存每个question的关键字
+            for idx in range(len(pred_label[i][1:length+1])):
+                if pred_label[i][1:length+1][idx] == 1:
+                    key_words.append(examples['tokens'][i][idx])
+            key_words_all.append(key_words)
+            # 准确性评估
             if (pred_label[i][1:length+1] == label).all(): # 判断是否全部正确 
                 correct += 1
             else: # 有关键字错误
@@ -170,27 +158,23 @@ def evaluate(model=None):
             total += 1
         # 通过日志匹配的是否准确来判断acc
     print('Correct/Total:{}/{}, Accuracy:{}'.format(correct, total, correct/total))
-    return loss
+    return loss, key_words_all
     
 if __name__ == '__main__':
-    # split_train_test()
-    # model = DistilbertForTokenClassification()
+    model = DistilbertForTokenClassification()
     train_loader = QuestionDataLoader(QuestionDataset(type='train'), batch_size=16)
-    for example in train_loader:
-        print(example.keys())
-        break
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-    # for epoch in range(100):
-    #     model.train()
-    #     train_loss = train(model, train_loader, optimizer)
-    #     test_loss = 0
-    #     if (epoch+1) % 20 == 0 and epoch > 50 :
-    #         optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] / 2
-    #         # 保存模型
-    #         torch.save(model.state_dict(), './logs/Spark/distilBert.pth')
-    #         # 评估模型
-    #         test_loss = evaluate(model)
-    #         print('Epoch:{}, Train Loss:{}, Test Loss:{}'.format(epoch, train_loss, test_loss))
-    #     print('Epoch: %d, Train Loss: %.3f' % (epoch, train_loss))
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    for epoch in range(100):
+        model.train()
+        train_loss = train(model, train_loader, optimizer)
+        test_loss = 0
+        if (epoch+1) % 20 == 0 and epoch > 50 :
+            optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] / 2
+            # 保存模型
+            torch.save(model.state_dict(), './logs/Spark/distilBert.pth')
+            # 评估模型
+            test_loss, key_words_all = evaluate(model)
+            print('Epoch:{}, Train Loss:{}, Test Loss:{}'.format(epoch, train_loss, test_loss))
+        print('Epoch: %d, Train Loss: %.3f' % (epoch, train_loss))
     # evaluate()
     
