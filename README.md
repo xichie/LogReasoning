@@ -18,8 +18,8 @@
 
 4. 训练QANet提取事件中答案的位置: cd QANet-pytorch-/ python main.py --mode data   python main.py --mode train
 5. 评估QANet的结果，并保存每个问题对应答案在日志事件中的位置: cd QANet-pytorch-/ python main.py --mode test
-6. 根据4、5的结果提取问题的答案: python extract_answer.py (TO DO)
-7. 根据问题判断应该进行的计算: python judge_question.py (TO DO)
+6. 根据4、5的结果提取问题的答案: python extract_answer.py 
+7. 根据问题判断应该进行的计算: python judge_question.py 
 
 
 |    Method  | F1 | EM  |
