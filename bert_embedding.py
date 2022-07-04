@@ -5,7 +5,7 @@ import pandas as pd
 from transformers import BertTokenizer, BertModel
 import torch
 from tqdm import tqdm
-from model import BertSimilarity
+from q2e_model import BertSimilarity
 random.seed(1234)
 
 @torch.no_grad()
@@ -21,7 +21,7 @@ def bert_embedding(logs_file: str):
         log_output = bert_model(**log_input)
         log_vec = log_output.last_hidden_state.squeeze()[-1]  # used last state to instead of the text
         d[raw['EventTemplate']] = log_vec.detach().tolist()
-    with open('./logs/Spark/event2vec.json', 'w') as f:
+    with open('./logs/HDFS/event2vec.json', 'w') as f:
         json.dump(d, f)
         
 @torch.no_grad()
@@ -29,7 +29,7 @@ def my_bert_embedding(logs_file: str):
     logs = load_logs(logs_file)
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     model = BertSimilarity()
-    model.load_state_dict(torch.load('./logs/Spark/bert.pth'))
+    model.load_state_dict(torch.load('./logs/HDFS/bert.pth'))
     
     d = {}
     for index, raw in tqdm(logs.iterrows()):
@@ -38,7 +38,7 @@ def my_bert_embedding(logs_file: str):
        
         log_vec = model.forward_once(log_input)
         d[raw['EventTemplate']] = log_vec.squeeze().detach().tolist()
-    with open('./logs/Spark/event2vec_mybert.json', 'w') as f:
+    with open('./logs/HDFS/event2vec_mybert.json', 'w') as f:
         json.dump(d, f)
 
 def load_json(fn:str) -> list:
@@ -85,4 +85,5 @@ def load_qa(qa_file:str) -> dict:
     return datasets
 
 if __name__ == '__main__':
-    my_bert_embedding('./logs/Spark/spark_2k.log_templates.csv')
+    # bert_embedding('./logs/HDFS/HDFS_2k.log_templates.csv')
+    my_bert_embedding('./logs/HDFS/HDFS_2k.log_templates.csv')

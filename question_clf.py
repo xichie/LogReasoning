@@ -6,14 +6,13 @@ from torch import nn
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from torch.utils.data import Dataset, DataLoader
 from utils import read_json
-import json
 
 
 class QuestionDataset(Dataset):
     def __init__(self, type='train'):
         self.type = type
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-        qa_data = read_json('./logs/Spark/spark_multihop_questions_{}.json'.format(type))
+        qa_data = read_json('./logs/HDFS/hdfs_multihop_questions_{}.json'.format(type))
         
         answer_type_mapping = {
             'addition': 0,
@@ -104,7 +103,7 @@ def evaluate(model=None):
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
     if model == None:
         model = QModel()
-        model.load_state_dict(torch.load('./logs/Spark/BertForSeqClf.pth'))
+        model.load_state_dict(torch.load('./logs/HDFS/BertForSeqClf.pth'))
         model = model.cuda()
         
     model.eval()
@@ -142,7 +141,7 @@ if __name__ == '__main__':
         if (epoch+1) % 5 == 0:
             optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] / 2
             # 保存模型
-            torch.save(model.state_dict(), './logs/Spark/BertForSeqClf.pth')
+            torch.save(model.state_dict(), './logs/HDFS/BertForSeqClf.pth')
             # 评估模型
             test_loss, pred_label = evaluate(model)
             print('Epoch:{}, Train Loss:{}, Test Loss:{}'.format(epoch, train_loss, test_loss))

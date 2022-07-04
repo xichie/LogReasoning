@@ -32,7 +32,7 @@ class QuestionDataset(Dataset):
     def __init__(self, type='train'):
         self.type = type
         self.tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
-        qa_data = read_json('./logs/Spark/spark_multihop_questions_{}.json'.format(type))
+        qa_data = read_json('./logs/HDFS/hdfs_multihop_questions_{}.json'.format(type))
         examples = {
             'tokens': [],
             'ner_tags': [],
@@ -120,7 +120,7 @@ def evaluate(model=None):
     tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
     if model == None:
         model = DistilbertForTokenClassification()
-        model.load_state_dict(torch.load('./logs/Spark/distilBert.pth'))
+        model.load_state_dict(torch.load('./logs/HDFS/distilBert.pth'))
         model = model.cuda()
         
     model.eval()
@@ -171,7 +171,7 @@ if __name__ == '__main__':
         if (epoch+1) % 20 == 0 and epoch > 50 :
             optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] / 2
             # 保存模型
-            torch.save(model.state_dict(), './logs/Spark/distilBert.pth')
+            torch.save(model.state_dict(), './logs/HDFS/distilBert.pth')
             # 评估模型
             test_loss, key_words_all = evaluate(model)
             print('Epoch:{}, Train Loss:{}, Test Loss:{}'.format(epoch, train_loss, test_loss))

@@ -22,7 +22,7 @@ def save_multihop_qa():
 '''
 def split_train_test():
     questions = []
-    with open('./logs/Spark/spark_multihop_qa_v4.json') as f:
+    with open('./logs/HDFS/HDFS_multihop_qa.json') as f:
         for line in f.readlines():
             questions.append(json.loads(line))
             
@@ -30,11 +30,11 @@ def split_train_test():
     train, test = train_test_split(questions, test_size=0.3, random_state=1)
     print('train:', len(train))
     print('test:', len(test))
-    with open('./logs/Spark/spark_multihop_qa_train.json', 'w') as f:
+    with open('./logs/HDFS/hdfs_multihop_qa_train.json', 'w') as f:
         for line in train:
             f.write(json.dumps(line, ensure_ascii=False) + '\n')
 
-    with open('./logs/Spark/spark_multihop_qa_test.json', 'w') as f:
+    with open('./logs/HDFS/hdfs_multihop_qa_test.json', 'w') as f:
         for line in test:
             f.write(json.dumps(line, ensure_ascii=False) + '\n')
 
@@ -72,10 +72,10 @@ def labeled_question_position():
 '''
 def save_question(multihop_qa_data, data_type):
     # multihop_qa_data = read_json('./logs/Spark/spark_multihop_qa_v3.json')
-    with open('./logs/Spark/spark_multihop_questions_{}.json'.format(data_type), 'w') as f:
+    with open('./logs/HDFS/hdfs_multihop_questions_{}.json'.format(data_type), 'w') as f:
         for qa_info in multihop_qa_data:
             line = {}
-            q_token = qa_info['Question'].replace('?', '').split()
+            q_token = qa_info['Question'].replace('?', '').replace(':', ' ').replace('/', ' ').split()
             
             line['Question'] = q_token
             line['keywords'] = qa_info['keywords']
@@ -101,7 +101,7 @@ def convert_idx(text, tokens):
     转为SQuAD格式
 ''' 
 def transfer2SquAD(multihop_qa_data, data_type='train'):
-    templates_df = pd.read_csv('./logs/Spark/spark_2k.log_templates.csv')
+    templates_df = pd.read_csv('./logs/HDFS/HDFS_2k.log_templates.csv')
     # 转化为字典, key为事件id, value为事件模板
     templates_dict = {}
     for index, row in templates_df.iterrows():
@@ -116,7 +116,7 @@ def transfer2SquAD(multihop_qa_data, data_type='train'):
         eventID = line['Events'][0]
         template = templates_dict[eventID]
         
-        template_token = template.split(' ')
+        template_token = template.replace('/', ' ').replace(':', ' ').split(' ')
         answer_start = 0
         
         if answer_idx == -1:  # 答案是计数类型
@@ -152,17 +152,19 @@ def transfer2SquAD(multihop_qa_data, data_type='train'):
             
         })
     squad_data = {'data': squad_data}
-    with open('./logs/Spark/spark_multihop_qa_squad_{}.json'.format(data_type), 'w') as f:
+    with open('./logs/HDFS/hdfs_multihop_qa_squad_{}.json'.format(data_type), 'w') as f:
         f.write(json.dumps(squad_data, ensure_ascii=False) + '\n')
         
 
 
 if __name__ == '__main__':
-    data_type = 'test'
+    
     # transfer_rawlog_to_logs()
     # labeled_question_position()
     split_train_test()
-    transfer2SquAD(read_json('./logs/Spark/spark_multihop_qa_{}.json'.format(data_type)), data_type)
-    save_question(read_json('./logs/Spark/spark_multihop_qa_{}.json'.format(data_type)), data_type)
+    transfer2SquAD(read_json('./logs/HDFS/hdfs_multihop_qa_{}.json'.format('train')), 'train')
+    transfer2SquAD(read_json('./logs/HDFS/hdfs_multihop_qa_{}.json'.format('test')), 'test')
+    save_question(read_json('./logs/HDFS/hdfs_multihop_qa_{}.json'.format('train')), 'train')
+    save_question(read_json('./logs/HDFS/hdfs_multihop_qa_{}.json'.format('test')), 'test')
     # labeled_question_keyword()
     # save_multihop_qa()

@@ -343,8 +343,8 @@ def save(filename, obj, message=None):
 
 
 def preproc(config):
-    train_data = '../logs/Spark/spark_multihop_qa_squad_train.json'
-    test_data = '../logs/Spark/spark_multihop_qa_squad_test.json'
+    train_data = '../logs/HDFS/hdfs_multihop_qa_squad_train.json'
+    test_data = '../logs/HDFS/hdfs_multihop_qa_squad_test.json'
     word_counter, char_counter = Counter(), Counter()
     train_examples, train_eval = process_file(train_data, "train", word_counter, char_counter)
     dev_examples, dev_eval = process_file(test_data, "dev", word_counter, char_counter)

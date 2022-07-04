@@ -5,7 +5,7 @@ from transformers import BertModel
 
 
 '''
-    基于bert finetune的问题匹配模型
+    基于bert finetune的问题匹配模型 Q2E model
 '''
 
 # Custom Contrastive Loss
@@ -97,7 +97,7 @@ def evaluate(model, dataloader, device='cuda'):
 
 if __name__ == '__main__':
     dataset = QADataset()
-    dataloader = MyDataLoader(dataset, batch_size=10, shuffle=True, num_workers=0)
+    dataloader = MyDataLoader(dataset, batch_size=16, shuffle=True, num_workers=0)
     model = BertSimilarity()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     criterion = ContrastiveLoss()
@@ -106,5 +106,5 @@ if __name__ == '__main__':
         print('Epoch: %d, Loss: %.3f' % (epoch, loss))
         if (epoch+1) % 2 == 0:
             # 保存模型
-            torch.save(model.state_dict(), './logs/Spark/bert.pth')
+            torch.save(model.state_dict(), './logs/HDFS/bert.pth')
 

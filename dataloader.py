@@ -19,9 +19,9 @@ import numpy as np
 class QADataset(Dataset):
     def __init__(self):
         # 加载qa数据
-        qa_data = read_json('./logs/Spark/spark_multihop_qa_v2.json')
+        qa_data = read_json('./logs/HDFS/hdfs_multihop_qa_train.json')
         # 加载所有的日志事件
-        log_templates = pd.read_csv('logs/Spark/spark_2k.log_templates.csv')
+        log_templates = pd.read_csv('logs/HDFS/HDFS_2k.log_templates.csv')
         self.templates = list(log_templates['EventTemplate'])
         self.events_count = len(log_templates)
         # Bert tokenizer
@@ -58,7 +58,9 @@ class QADataset(Dataset):
         t_token = {}
         for key in self.templates_token.keys():
             t_token[key] = self.templates_token[key][selected_index]
-        
+        # print(np.array(self.events[index]))
+        # print(np.array((selected_index)))
+        # print(np.array(self.events[index]) != np.array((selected_index)))
         label = torch.LongTensor(np.array(self.events[index]) != np.array((selected_index)))
       
         return q_token_, t_token,  label
@@ -69,7 +71,7 @@ class QADataset(Dataset):
 # 定义一个类，继承DataLoader
 class MyDataLoader(DataLoader):
     def __init__(self, dataset, batch_size, shuffle=True, num_workers=0):
-        super(MyDataLoader, self).__init__(dataset, batch_size, shuffle, num_workers=num_workers)
+        super(MyDataLoader, self).__init__(dataset, batch_size, shuffle, num_workers=num_workers, drop_last=True)
     
     def __iter__(self):
         for i in range(len(self)):
@@ -84,4 +86,4 @@ if __name__ == '__main__':
         print(question['input_ids'].size())
         print(event['input_ids'].size())
         print(label.size())
-        break
+        

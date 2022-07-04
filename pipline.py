@@ -1,5 +1,5 @@
 from Q2E import match_question_event
-from QE2Log import rule_based_filter, model_based_filter
+from QE2Log import rule_based_filter, model_based_filter, rule_based_filter_hdfs
 from QEAnsPos import get_pos
 from question_clf import evaluate
 from utils import read_json, filter_digits
@@ -15,7 +15,7 @@ answer_type_mapping = {
 def main():
     q2e_acc, qe = match_question_event('mybert')  # (question, event)
     # filter_logs =  rule_based_filter(qe)  # (question, logs)
-    filter_logs =  model_based_filter(qe)  # (question, logs)
+    filter_logs =  rule_based_filter_hdfs(qe)  # (question, logs)
     position_dict = get_pos(qe) # (question, pos)
     # AnsPos2Num
     i = 1
@@ -37,7 +37,8 @@ def main():
     # 判断答案类型
     _, answer_type = evaluate()
     total, correct = 0, 0
-    for i, qa_info in enumerate(read_json('./logs/Spark/spark_multihop_qa_test.json')):
+    for i, qa_info in enumerate(read_json('./logs/HDFS/hdfs_multihop_qa_test.json')):
+        pred_ans = ''
         ans_list = pred_qa[i][1]
         anst = answer_type[i]
         if anst == 0: # add
@@ -72,3 +73,7 @@ def main():
     
 if __name__ == '__main__':
     main()
+    # q2e_acc, qe = match_question_event('mybert')  # (question, event)
+    # filter_logs =  rule_based_filter_hdfs(qe)
+    # # filter_logs =  rule_based_filter(qe)  # (question, logs)
+    # filter_logs =  model_based_filter(qe)  # (question, logs)
