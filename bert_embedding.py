@@ -6,10 +6,12 @@ from transformers import BertTokenizer, BertModel
 import torch
 from tqdm import tqdm
 from q2e_model import BertSimilarity
+import argparse
+
 random.seed(1234)
 
 @torch.no_grad()
-def bert_embedding(logs_file: str):
+def bert_embedding(dataset, logs_file: str):
     logs = load_logs(logs_file)
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     bert_model = BertModel.from_pretrained('bert-base-uncased')
@@ -21,15 +23,15 @@ def bert_embedding(logs_file: str):
         log_output = bert_model(**log_input)
         log_vec = log_output.last_hidden_state.squeeze()[-1]  # used last state to instead of the text
         d[raw['EventTemplate']] = log_vec.detach().tolist()
-    with open('./logs/HDFS/event2vec.json', 'w') as f:
+    with open('./logs/{}/event2vec.json'.format(dataset), 'w') as f:
         json.dump(d, f)
         
 @torch.no_grad()
-def my_bert_embedding(logs_file: str):
+def my_bert_embedding(dataset, logs_file: str):
     logs = load_logs(logs_file)
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     model = BertSimilarity()
-    model.load_state_dict(torch.load('./logs/HDFS/bert.pth'))
+    model.load_state_dict(torch.load('./logs/{}/mybert.pth'.format(dataset)))
     
     d = {}
     for index, raw in tqdm(logs.iterrows()):
@@ -38,7 +40,7 @@ def my_bert_embedding(logs_file: str):
        
         log_vec = model.forward_once(log_input)
         d[raw['EventTemplate']] = log_vec.squeeze().detach().tolist()
-    with open('./logs/HDFS/event2vec_mybert.json', 'w') as f:
+    with open('./logs/{}/event2vec_mybert.json'.format(dataset), 'w') as f:
         json.dump(d, f)
 
 def load_json(fn:str) -> list:
@@ -77,13 +79,16 @@ def load_logs(fn: str):
     df = pd.read_csv(fn)
     return df
 
-
-
 def load_qa(qa_file:str) -> dict:
     qa_list = load_json(qa_file)
     datasets = split_data(qa_list)
     return datasets
 
 if __name__ == '__main__':
-    # bert_embedding('./logs/HDFS/HDFS_2k.log_templates.csv')
-    my_bert_embedding('./logs/HDFS/HDFS_2k.log_templates.csv')
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('--dataset', type=str, help='dataset to use')
+    arg = argparser.parse_args()
+    dataset = arg.dataset
+  
+    # bert_embedding(dataset, './logs/{}/{}_2k.log_templates.csv'.format(dataset, dataset))
+    my_bert_embedding(dataset, './logs/{}/{}_2k.log_templates.csv'.format(dataset, dataset))

@@ -9,6 +9,15 @@ from transformers import BertTokenizer, BertModel
 import torch
 import uuid
 
+
+def isNum(n):
+    try:
+        n=eval(n)
+        if type(n)==int or type(n)==float or type(n)==complex:
+            return True
+    except NameError:
+        return False
+
 # 过滤list中数字
 def filter_digits(a:list) -> list:
     b = []

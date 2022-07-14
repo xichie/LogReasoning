@@ -6,6 +6,7 @@ from transformers import AutoModelForTokenClassification
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 import numpy as np
+import argparse
 
 '''
     标记日志中的关键词(基于模型的预测)
@@ -29,10 +30,10 @@ class DistilbertForTokenClassification(nn.Module):
         return output
         
 class QuestionDataset(Dataset):
-    def __init__(self, type='train'):
+    def __init__(self, dataset, type='train'):
         self.type = type
         self.tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
-        qa_data = read_json('./logs/HDFS/hdfs_multihop_questions_{}.json'.format(type))
+        qa_data = read_json('./logs/{}/questions_{}.json'.format(dataset, type))
         examples = {
             'tokens': [],
             'ner_tags': [],
@@ -115,16 +116,16 @@ def train(model, dataloader, optimizer, device='cuda'):
     return loss_total / len(dataloader)
 
 @torch.no_grad()
-def evaluate(model=None):
+def evaluate(dataset, model=None):
     print('Evaluating...')
     tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
     if model == None:
         model = DistilbertForTokenClassification()
-        model.load_state_dict(torch.load('./logs/HDFS/distilBert.pth'))
+        model.load_state_dict(torch.load('./logs/{}/distilBert.pth'.format(dataset)))
         model = model.cuda()
         
     model.eval()
-    dataloader = QuestionDataLoader(QuestionDataset('test'), batch_size=32)
+    dataloader = QuestionDataLoader(QuestionDataset(dataset, 'test'), batch_size=32)
     
     total, correct, loss = 0, 0, 0
     key_words_all = []
@@ -161,20 +162,23 @@ def evaluate(model=None):
     return loss, key_words_all
     
 if __name__ == '__main__':
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('--dataset', type=str, help='dataset to use')
+    arg = argparser.parse_args()
+    dataset = arg.dataset
+    
     model = DistilbertForTokenClassification()
-    train_loader = QuestionDataLoader(QuestionDataset(type='train'), batch_size=16)
+    train_loader = QuestionDataLoader(QuestionDataset(dataset, type='train'), batch_size=16)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-    for epoch in range(100):
+    for epoch in range(50):
         model.train()
         train_loss = train(model, train_loader, optimizer)
         test_loss = 0
-        if (epoch+1) % 20 == 0 and epoch > 50 :
+        if (epoch+1) % 10 == 0:
             optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] / 2
             # 保存模型
-            torch.save(model.state_dict(), './logs/HDFS/distilBert.pth')
-            # 评估模型
-            test_loss, key_words_all = evaluate(model)
-            print('Epoch:{}, Train Loss:{}, Test Loss:{}'.format(epoch, train_loss, test_loss))
+            torch.save(model.state_dict(), './logs/{}/distilBert.pth'.format(dataset))
         print('Epoch: %d, Train Loss: %.3f' % (epoch, train_loss))
-    # evaluate()
-    
+    # 评估模型
+    test_loss, key_words_all = evaluate(dataset, model)
+    print('Epoch:{}, Train Loss:{}, Test Loss:{}'.format(epoch, train_loss, test_loss))

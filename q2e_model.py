@@ -2,6 +2,7 @@ from torch import nn
 import torch
 from dataloader import QADataset, MyDataLoader
 from transformers import BertModel
+import argparse
 
 
 '''
@@ -96,15 +97,20 @@ def evaluate(model, dataloader, device='cuda'):
     return loss_total / len(dataloader)
 
 if __name__ == '__main__':
-    dataset = QADataset()
-    dataloader = MyDataLoader(dataset, batch_size=16, shuffle=True, num_workers=0)
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('--dataset', type=str, help='dataset to use')
+    arg = argparser.parse_args()
+    
+    dataset = arg.dataset
+    data = QADataset(dataset)
+    dataloader = MyDataLoader(data, batch_size=16, shuffle=True, num_workers=0)
     model = BertSimilarity()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     criterion = ContrastiveLoss()
     for epoch in range(50):
         loss = train(model, dataloader, optimizer, criterion)
         print('Epoch: %d, Loss: %.3f' % (epoch, loss))
-        if (epoch+1) % 2 == 0:
-            # 保存模型
-            torch.save(model.state_dict(), './logs/HDFS/bert.pth')
+        # if (epoch+1) % 2 == 0:
+    # 保存模型
+    torch.save(model.state_dict(), './logs/{}/mybert.pth'.format(dataset))
 

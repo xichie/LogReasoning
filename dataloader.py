@@ -17,11 +17,11 @@ import numpy as np
 
 # 定义一个类，继承Dataset
 class QADataset(Dataset):
-    def __init__(self):
+    def __init__(self, dataset):
         # 加载qa数据
-        qa_data = read_json('./logs/HDFS/hdfs_multihop_qa_train.json')
+        qa_data = read_json('./logs/{}/qa_train.json'.format(dataset))
         # 加载所有的日志事件
-        log_templates = pd.read_csv('logs/HDFS/HDFS_2k.log_templates.csv')
+        log_templates = pd.read_csv('logs/{}/{}_2k.log_templates.csv'.format(dataset, dataset))
         self.templates = list(log_templates['EventTemplate'])
         self.events_count = len(log_templates)
         # Bert tokenizer
@@ -79,7 +79,6 @@ class MyDataLoader(DataLoader):
 
 
 if __name__ == '__main__':
-    
     dataset = QADataset()
     dataloader = MyDataLoader(dataset, batch_size=10, shuffle=True, num_workers=0)
     for i, (question, event, label) in enumerate(dataloader):

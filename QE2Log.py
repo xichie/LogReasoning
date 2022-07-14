@@ -1,47 +1,65 @@
-from utils import read_json, get_similarity_logs
-from filter_logs_model import DistilbertForTokenClassification, evaluate
-import torch
+from utils import read_json, get_similarity_logs, isNum
+from QE2Log_model import evaluate
+from Q2E import match_question_event
 import pandas as pd
 import json
 
 # model-based
-def model_based_filter(qe):
+def model_based_filter(dataset, qe):
+    stop_words = ['is', 'of', 'in', 'by', 'the', 'a', 'an', 'can', 'be', 'on', 'from', 'to', 'take', 'up', 'free', 'that', 'for']
     filter_logs = {}
-    loss, key_words_all = evaluate()
+    loss, key_words_all = evaluate(dataset)
+    for i in range(len(key_words_all)):
+        key_words_all[i] = [word for word in key_words_all[i] if word not in stop_words]
     print(key_words_all)
-    df = pd.read_csv('./logs/HDFS/HDFS_2k.log_structured.csv')
+    df = pd.read_csv('./logs/{}/{}_2k.log_structured.csv'.format(dataset, dataset))
 
     for i, (q, e) in enumerate(qe.items()):
         filter_logs[q] = []
         logs = df[df['EventId'] == e]['Content'].to_list() # 对应事件的日志
+        cur_kw_list = [] 
+        for kw in key_words_all[i]:
+            if 'rdd' in kw:
+              cur_kw_list.append(kw)
+              break
+        if len(cur_kw_list) == 0:
+            cur_kw_list = key_words_all[i]
         for log in logs:
             log_lower = log.lower() # log转为小写
-            kw_include = []
-            for kw in key_words_all[i]:
-                if kw in log_lower:
-                    kw_include.append(kw)
-            if len(kw_include) == 0:
+            if len(cur_kw_list) == 0:
                 continue
-            # if len(kw_include) == len(key_words_all[i]):  # 所有关键字都在log中，则判断该子字符串是否包含(HDFS)
-            #     if ' '.join(kw_include) in log:
-            #         filter_logs[q].append(log)
-            if len(kw_include) > 2 or len(kw_include) == len(key_words_all[i]):
-                filter_logs[q].append(log)
-                 
-                
-  
-    f = open('logs/HDFS/hdfs_question_logs_filter_model_based.json', 'w')
+            if dataset == 'Spark':
+                if ' '.join(cur_kw_list) in log_lower:  
+                    filter_logs[q].append(log)
+            elif dataset == 'HDFS':
+                log_token = log_lower.split()
+                log_flag = True  # log是否包含所有关键字
+                # 判断所有kw都在log中
+                for kw in cur_kw_list:
+                    kw_flag = False
+                    for token in log_token:
+                        if kw in token:
+                            kw_flag = True
+                            break
+                    if not kw_flag:
+                        log_flag = False
+                        break   
+                if log_flag:
+                    filter_logs[q].append(log)
+
+            
+    f = open('logs/{}/filter_model_based.json'.format(dataset), 'w')
     for q, logs in filter_logs.items():
         q_logs = json.dumps({'Question': q, 'Logs': logs})
         f.write(q_logs + '\n')
     f.close()
     return filter_logs
 
-# (HDFS)根据问题匹配的事件，过滤日志 (rule-based)
-def rule_based_filter(qe) -> dict:
-    df = pd.read_csv('./logs/Spark/spark_2k.log_structured.csv')
+# 根据问题匹配的事件，过滤日志 (rule-based)
+def rule_based_filter_spark(qe) -> dict:
+    df = pd.read_csv('./logs/Spark/Spark_2k.log_structured.csv')
     exclude = [')', '(', ',', ':', '', '?']  # 将文本中的特殊符号替换
-    
+
     filter_logs = {}
     for i, (q, e) in enumerate(qe.items()):
         filter_logs[q] = []
@@ -71,6 +89,10 @@ def rule_based_filter(qe) -> dict:
             for log in logs:
                 if q_token[-1] in log:
                     filter_logs[q].append(log)
+        elif 'broadcast' in  q_token[-1]:  # 包含broadcast的关键字的日志
+            for log in logs:
+                if q_token[-1] in log:
+                    filter_logs[q].append(log) 
         else:   # 次数不为0的关键字两两组合     
             for token in q_token[:-1]:
                 for log in logs:
@@ -85,7 +107,7 @@ def rule_based_filter(qe) -> dict:
             filter_logs[q] = logs
     
     # 保存结果               
-    f = open('logs/Spark/spark_question_logs_filter_rule_based.json', 'w')
+    f = open('logs/Spark/filter_rule_based.json', 'w')
     for q, logs in filter_logs.items():
         q_logs = json.dumps({'Question': q, 'Logs': logs})
         f.write(q_logs + '\n')
@@ -128,7 +150,7 @@ def rule_based_filter_hdfs(qe) -> dict:
             filter_logs[q] = logs
         
     # 保存结果               
-    f = open('logs/HDFS/hdfs_question_logs_filter_rule_based.json', 'w')
+    f = open('logs/HDFS/filter_rule_based.json', 'w')
     for q, logs in filter_logs.items():
         q_logs = json.dumps({'Question': q, 'Logs': logs})
         f.write(q_logs + '\n')
@@ -136,14 +158,14 @@ def rule_based_filter_hdfs(qe) -> dict:
     return filter_logs   
             
 # 评估问题匹配日志的准确率
-def evaluate_match_qlogs_accuracy():
+def evaluate_match_qlogs_accuracy(dataset):
     results = []
-    with open('./logs/HDFS/hdfs_question_logs_filter_model_based.json', 'r') as f:
+    with open('./logs/{}/filter_model_based.json'.format(dataset), 'r') as f:
         for line in f.readlines():
             q_logs = json.loads(line)
             results.append(q_logs)
-    print(results[1])
-    with open('./logs/HDFS/hdfs_multihop_qa_test.json', 'r') as f:
+    # print(results[1])
+    with open('./logs/{}/qa_test.json'.format(dataset), 'r') as f:
         idx = 0
         err_count = 0
         for line in f.readlines():
@@ -160,8 +182,10 @@ def evaluate_match_qlogs_accuracy():
                         print(idx)
                         break
             idx += 1
-        print('accuracy:', 1 - err_count / len(results))
+        print('QE2Log accuracy:', 1 - err_count / len(results))
 
 if __name__ == '__main__':
-    # model_based_filter(None)
-    evaluate_match_qlogs_accuracy()
+    dataset = 'Spark'
+    # q2e_acc, qe = match_question_event(dataset, 'mybert')  # (question, event)
+    # model_based_filter(dataset, qe)
+    evaluate_match_qlogs_accuracy(dataset)

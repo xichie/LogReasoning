@@ -6,19 +6,21 @@ from torch import nn
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from torch.utils.data import Dataset, DataLoader
 from utils import read_json
+import argparse
 
 
 class QuestionDataset(Dataset):
-    def __init__(self, type='train'):
+    def __init__(self, dataset, type='train'):
         self.type = type
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-        qa_data = read_json('./logs/HDFS/hdfs_multihop_questions_{}.json'.format(type))
+        qa_data = read_json('./logs/{}/questions_{}.json'.format(dataset, type))
         
         answer_type_mapping = {
             'addition': 0,
             'count': 1,
             'maximum': 2,
-            'minimum': 3
+            'minimum': 3,
+            'Span': 4
         }
         examples = {
             'tokens': [],
@@ -66,7 +68,7 @@ class QuestionDataLoader(DataLoader):
 class QModel(nn.Module):
     def __init__(self):
         super(QModel, self).__init__()
-        self.bert = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=4)
+        self.bert = AutoModelForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=5)
         # 只训练分类器
         unfreeze_layers = ['layer.5', 'classifier']
         for name, param in self.bert.named_parameters():
@@ -98,16 +100,16 @@ def train(model, dataloader, optimizer, device='cuda'):
     return loss_total / len(dataloader)
 
 @torch.no_grad()
-def evaluate(model=None):
+def evaluate(dataset, model=None):
     print('Evaluating...')
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
     if model == None:
         model = QModel()
-        model.load_state_dict(torch.load('./logs/HDFS/BertForSeqClf.pth'))
+        model.load_state_dict(torch.load('./logs/{}/BertForSeqClf.pth'.format(dataset)))
         model = model.cuda()
         
     model.eval()
-    dataloader = QuestionDataLoader(QuestionDataset('test'), batch_size=32)
+    dataloader = QuestionDataLoader(QuestionDataset(dataset, 'test'), batch_size=32)
     
     total, correct, loss = 0, 0, 0
     pred_label_list = []
@@ -126,24 +128,29 @@ def evaluate(model=None):
             if label == pred_label[i]:
                 correct += 1
             total += 1
-    print('Correct/Total:{}/{}, Accuracy:{}'.format(correct, total, correct/total))
+    print('Question clf, Correct/Total:{}/{}, Accuracy:{}'.format(correct, total, correct/total))
     return loss, pred_label_list
 
 if __name__ == '__main__':
-    train_loader = QuestionDataLoader(QuestionDataset(type='train'), batch_size=16)
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('--dataset', type=str, help='dataset to use')
+    arg = argparser.parse_args()
+    dataset = arg.dataset
+
+    train_loader = QuestionDataLoader(QuestionDataset(dataset, type='train'), batch_size=16)
     model = QModel()
-    train_loader = QuestionDataLoader(QuestionDataset(type='train'), batch_size=16)
+    train_loader = QuestionDataLoader(QuestionDataset(dataset, type='train'), batch_size=16)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-    for epoch in range(100):
+    for epoch in range(50):
         model.train()
         train_loss = train(model, train_loader, optimizer)
         test_loss = 0
         if (epoch+1) % 5 == 0:
             optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] / 2
-            # 保存模型
-            torch.save(model.state_dict(), './logs/HDFS/BertForSeqClf.pth')
-            # 评估模型
-            test_loss, pred_label = evaluate(model)
-            print('Epoch:{}, Train Loss:{}, Test Loss:{}'.format(epoch, train_loss, test_loss))
         print('Epoch: %d, Train Loss: %.3f' % (epoch, train_loss))
+    # 保存模型
+    torch.save(model.state_dict(), './logs/{}/BertForSeqClf.pth'.format(dataset))
+    # 评估模型
+    test_loss, pred_label = evaluate(dataset, model)
+    print('Epoch:{}, Train Loss:{}, Test Loss:{}'.format(epoch, train_loss, test_loss))
     
