@@ -40,6 +40,8 @@ if not os.path.exists(save_dir):
 if not os.path.exists(answer_dir):
     os.makedirs(answer_dir)
 
+flags.DEFINE_string("dataset", "HDFS", "use dataset: [HDFS, Spark, et.al]")
+
 flags.DEFINE_string("mode", "train", "train/debug/test")
 
 flags.DEFINE_string("target_dir", target_dir, "")
@@ -72,7 +74,7 @@ flags.DEFINE_integer("char_dim", 64, "Embedding dimension for char")
 
 flags.DEFINE_integer("para_limit", 200, "Limit length for paragraph")
 flags.DEFINE_integer("ques_limit", 150, "Limit length for question")
-flags.DEFINE_integer("ans_limit", 20, "Limit length for answers")
+flags.DEFINE_integer("ans_limit", 30, "Limit length for answers")
 # flags.DEFINE_integer("test_para_limit", 400, "Limit length for paragraph in test file")
 # flags.DEFINE_integer("test_ques_limit", 100, "Limit length for question in test file")
 flags.DEFINE_integer("char_limit", 15, "Limit length for character")
@@ -86,7 +88,7 @@ flags.DEFINE_list("bucket_range", [40, 401, 40], "the range of bucket")
 
 flags.DEFINE_integer("batch_size", 64, "Batch size")
 #flags.DEFINE_integer("num_steps", 0, "Number of steps")
-flags.DEFINE_integer("num_epoch", 20, "Number of epoch")
+flags.DEFINE_integer("num_epoch", 100, "Number of epoch")
 flags.DEFINE_integer("checkpoint", 900, "checkpoint to save and evaluate the model")
 flags.DEFINE_integer("period", 100, "period to save batch loss")
 flags.DEFINE_integer("val_num_batches", 500, "Number of batches to evaluate the model")
@@ -113,8 +115,9 @@ fasttext_file = os.path.join(home, "data", "fasttext", "wiki-news-300d-1M.vec")
 flags.DEFINE_string("fasttext_file", fasttext_file, "Fasttext word embedding")
 flags.DEFINE_boolean("fasttext", False, "Whether to use fasttext")
 
+
 config = flags.FLAGS
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-cudnn.enabled = False
+cudnn.enabled = True

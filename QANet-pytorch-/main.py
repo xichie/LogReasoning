@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings("ignore")
+
 from config import config, device
 from preproc import preproc
 from absl import app
@@ -18,6 +21,8 @@ from torch.utils.data import Dataset
 from tensorboardX import SummaryWriter
 import pickle
 writer = SummaryWriter(log_dir='./log1')
+
+
 '''
 Some functions are from the official evaluation script.
 '''
