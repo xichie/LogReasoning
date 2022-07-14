@@ -1,7 +1,7 @@
 EventId,EventTemplate
 E1,attempt_<*>: Committed
-E2,"Block <*> stored as bytes in memory (estimated size <*>, free <*>)"
-E3,"Block <*> stored as values in memory (estimated size <*>, free <*>)"
+E2,"Block <*> stored as bytes in memory (estimated size <*> <*>, free <*> <*>)"
+E3,"Block <*> stored as values in memory (estimated size <*> <*>, free <*> <*>)"
 E4,Changing modify acls to: <*>
 E5,Changing view acls to: <*>
 E6,Connecting to driver: spark://<*>
