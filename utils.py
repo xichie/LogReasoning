@@ -186,7 +186,7 @@ def get_similarity_logs(question: str, logs: list, similarity:str, dataset: str=
         "BM25": {"func": None, "reverse": True},  # higher is best
         "Jaro": {"func": le.jaro, "reverse": True},  # higher is best
         "jaro_winkler": {"func": le.jaro_winkler, "reverse": True}, # higher is best
-        "consine": {"func": None, "reverse": True}, # higher is best
+        "cosine": {"func": None, "reverse": True}, # higher is best
         "mybert": {"func": None, "reverse": True}, # higher is best
     }
 

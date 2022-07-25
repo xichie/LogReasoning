@@ -170,7 +170,7 @@ if __name__ == '__main__':
     model = DistilbertForTokenClassification()
     train_loader = QuestionDataLoader(QuestionDataset(dataset, type='train'), batch_size=16)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-    for epoch in range(50):
+    for epoch in range(100):
         model.train()
         train_loss = train(model, train_loader, optimizer)
         test_loss = 0

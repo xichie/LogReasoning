@@ -1,12 +1,11 @@
-from utils import read_json, get_similarity_logs, isNum
 from QE2Log_model import evaluate
-from Q2E import match_question_event
 import pandas as pd
 import json
+import argparse
 
 # model-based
 def model_based_filter(dataset, qe):
-    stop_words = ['is', 'of', 'in', 'by', 'the', 'a', 'an', 'can', 'be', 'on', 'from', 'to', 'take', 'up', 'free', 'that', 'for']
+    stop_words = ['contain', 'free', 'is', 'of', 'in', 'by', 'the', 'a', 'an', 'can', 'be', 'on', 'from', 'to', 'take', 'up', 'free', 'that', 'for']
     filter_logs = {}
     loss, key_words_all = evaluate(dataset)
     for i in range(len(key_words_all)):
@@ -158,12 +157,18 @@ def rule_based_filter_hdfs(qe) -> dict:
     return filter_logs   
             
 # 评估问题匹配日志的准确率
-def evaluate_match_qlogs_accuracy(dataset):
+def evaluate_match_qlogs_accuracy(dataset, QE2Log):
     results = []
-    with open('./logs/{}/filter_model_based.json'.format(dataset), 'r') as f:
-        for line in f.readlines():
-            q_logs = json.loads(line)
-            results.append(q_logs)
+    if QE2Log == 'model':
+        with open('./logs/{}/filter_model_based.json'.format(dataset), 'r') as f:
+            for line in f.readlines():
+                q_logs = json.loads(line)
+                results.append(q_logs)
+    else:
+        with open('./logs/{}/filter_rule_based.json'.format(dataset), 'r') as f:
+            for line in f.readlines():
+                q_logs = json.loads(line)
+                results.append(q_logs)
     # print(results[1])
     with open('./logs/{}/qa_test.json'.format(dataset), 'r') as f:
         idx = 0
@@ -182,10 +187,16 @@ def evaluate_match_qlogs_accuracy(dataset):
                         print(idx)
                         break
             idx += 1
-        print('QE2Log accuracy:', 1 - err_count / len(results))
+        print('QE2Log accuracy ({}): {}'.format(QE2Log, 1 - err_count / len(results)))
 
 if __name__ == '__main__':
-    dataset = 'Spark'
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('--dataset', type=str, help='dataset to use')
+    argparser.add_argument('--QE2Log', type=str, help='QE2Log to use, model or rule')
+    arg = argparser.parse_args()
+    dataset = arg.dataset
+    QE2Log = arg.QE2Log
+
     # q2e_acc, qe = match_question_event(dataset, 'mybert')  # (question, event)
     # model_based_filter(dataset, qe)
     evaluate_match_qlogs_accuracy(dataset)

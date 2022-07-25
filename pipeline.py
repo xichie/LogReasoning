@@ -2,10 +2,11 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from Q2E import match_question_event
-from QE2Log import rule_based_filter_spark, model_based_filter, rule_based_filter_hdfs
+from QE2Log import rule_based_filter_spark, model_based_filter, rule_based_filter_hdfs, evaluate_match_qlogs_accuracy
 from QEAnsPos import get_pos
 from question_clf import evaluate
 from utils import read_json, filter_digits
+from tqdm import tqdm
 import argparse
 
 '''
@@ -20,15 +21,24 @@ answer_type_mapping = {
 def main():
     argparser = argparse.ArgumentParser()
     argparser.add_argument('--dataset', type=str, help='dataset to use')
+    argparser.add_argument('--QE2Log', type=str, help='QE2Log to use, model or rule', default='Gold')
     arg = argparser.parse_args()
     dataset = arg.dataset
+    QE2Log = arg.QE2Log
 
     q2e_acc, qe = match_question_event(dataset, 'mybert')  # (question, event)
-    
-    filter_logs =  rule_based_filter_hdfs(qe)  # (question, logs)
-    # filter_logs = model_based_filter(dataset, qe)
-    position_dict = get_pos(qe) # (question, pos)
+    if QE2Log == 'rule':
+        filter_logs =  rule_based_filter_spark(qe)  # (question, logs)
+        evaluate_match_qlogs_accuracy(dataset, QE2Log)
+    elif QE2Log == 'model':
+        filter_logs = model_based_filter(dataset, qe)
+        evaluate_match_qlogs_accuracy(dataset, QE2Log)
+    else:   # Gold retrival
+        filter_logs = {}   
+        for qa_info in tqdm(read_json('./logs/{}/qa_test.json'.format(dataset))):
+            filter_logs[qa_info['Question']] = qa_info['Logs']
 
+    position_dict = get_pos(qe) # (question, pos)
     # AnsPos2Num
     i = 1
     pred_qa = []
@@ -40,6 +50,7 @@ def main():
             continue
         for log in logs:
             log_token = log.replace(',', '').replace(')', '').split()
+            print(log_token)
             idx = position_dict[str(i)][0]
             ans.append(log_token[idx])
         pred_qa.append((question, ans))

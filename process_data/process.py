@@ -154,17 +154,65 @@ def transfer2SquAD(qa_data, dataset, data_type='train'):
         f.write(json.dumps(squad_data, ensure_ascii=False) + '\n')
         
 
+'''
+    转为SQuAD for other model, 只考虑Span类型
+''' 
+def transfer2SquAD_v2(qa_data, dataset, data_type='train'):
+    squad_data = []
+    for idx, line in enumerate(qa_data):
+        
+        question = line['Question']
+        answer_idx = line['answer_start']
+        answer_type = line['Answer_type']
+        answer_start = 0
+        
+        if answer_type == 'Span':  # 答案是Span类型
+            answer_text = line['Answer']
+            log = line['Logs'][0]
+            log_token = log.split()
+            for idx, token in enumerate(log_token):
+                if idx == answer_idx:
+                    break
+                answer_start += len(token) + 1
+            squad_data.append({
+                'title': '',
+                'paragraphs': [
+                    {
+                        'context': log,
+                        'qas': [
+                            {
+                                'answers': [
+                                    {
+                                        'answer_start': answer_start,
+                                        'text': answer_text,
+                                    },
+                                ],
+                                'question': question,
+                                'id': generate_uuid('')    
+                            }
+                            
+                        ]
+                    }
+                ]
+                
+            })
+    squad_data = {'data': squad_data}
+    with open('../logs/{}/squad_{}_v2.json'.format(dataset, data_type), 'w') as f:
+        f.write(json.dumps(squad_data, ensure_ascii=False) + '\n')
+        
 
 if __name__ == '__main__':
 
-    dataset = "HDFS"
+    dataset = "Spark"
 
     # transfer_rawlog_to_logs()
     # labeled_question_position()
-    split_train_test(dataset)
-    transfer2SquAD(read_json('../logs/{}/qa_{}.json'.format(dataset, 'train')), dataset, 'train')
-    transfer2SquAD(read_json('../logs/{}/qa_{}.json'.format(dataset, 'test')), dataset, 'test')
-    save_question(read_json('../logs/{}/qa_{}.json'.format(dataset, 'train')), dataset, 'train')
-    save_question(read_json('../logs/{}/qa_{}.json'.format(dataset, 'test')), dataset, 'test')
+    # split_train_test(dataset)
+    # transfer2SquAD(read_json('../logs/{}/qa_{}.json'.format(dataset, 'train')), dataset, 'train')
+    # transfer2SquAD(read_json('../logs/{}/qa_{}.json'.format(dataset, 'test')), dataset, 'test')
+    transfer2SquAD_v2(read_json('../logs/{}/qa_{}.json'.format(dataset, 'train')), dataset, 'train')
+    transfer2SquAD_v2(read_json('../logs/{}/qa_{}.json'.format(dataset, 'test')), dataset, 'test')
+    # save_question(read_json('../logs/{}/qa_{}.json'.format(dataset, 'train')), dataset, 'train')
+    # save_question(read_json('../logs/{}/qa_{}.json'.format(dataset, 'test')), dataset, 'test')
     # labeled_question_keyword()
     # save_multihop_qa()

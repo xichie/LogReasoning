@@ -11,6 +11,13 @@ import argparse
 
         
 def match_question_event(dataset, similarity_metric='Jaro'):
+    if similarity_metric == 'Gold':
+        qe = {} # question: event
+        for qa_info in tqdm(read_json('./logs/{}/qa_test.json'.format(dataset))):
+            if qa_info['Question'] in qe.keys(): # 查重
+                print(qa_info['Question'])
+            qe[qa_info['Question']] = qa_info['Events'][0]  
+        return 1.0, qe
     log_events =  pd.read_csv('./logs/{}/{}_2k.log_templates.csv'.format(dataset, dataset))
     event2id = {row['EventTemplate']: row['EventId'] for index, row  in log_events.iterrows()}
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased") if (similarity_metric in ['cosine', 'mybert'] )  else None
