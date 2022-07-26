@@ -10,7 +10,7 @@ def model_based_filter(dataset, qe):
     loss, key_words_all = evaluate(dataset)
     for i in range(len(key_words_all)):
         key_words_all[i] = [word for word in key_words_all[i] if word not in stop_words]
-    print(key_words_all)
+    # print(key_words_all)
     df = pd.read_csv('./logs/{}/{}_2k.log_structured.csv'.format(dataset, dataset))
 
     for i, (q, e) in enumerate(qe.items()):

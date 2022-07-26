@@ -28,7 +28,13 @@ def main():
 
     q2e_acc, qe = match_question_event(dataset, 'mybert')  # (question, event)
     if QE2Log == 'rule':
-        filter_logs =  rule_based_filter_spark(qe)  # (question, logs)
+        if dataset == 'Spark':
+            filter_logs =  rule_based_filter_spark(qe)  # (question, logs)
+        elif dataset == 'HDFS':
+            filter_logs =  rule_based_filter_hdfs(qe)  # (question, logs)
+        else:
+            print('Dataset is invalid!!!')
+            return
         evaluate_match_qlogs_accuracy(dataset, QE2Log)
     elif QE2Log == 'model':
         filter_logs = model_based_filter(dataset, qe)
