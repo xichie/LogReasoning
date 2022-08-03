@@ -44,7 +44,7 @@ def main():
         for qa_info in tqdm(read_json('./logs/{}/qa_test.json'.format(dataset))):
             filter_logs[qa_info['Question']] = qa_info['Logs']
 
-    position_dict = get_pos(qe) # (question, pos)
+    position_dict = get_pos(qe, dataset) # (question, pos)
     # AnsPos2Num
     i = 1
     pred_qa = []
@@ -55,8 +55,11 @@ def main():
             pred_qa.append((question, ans))
             continue
         for log in logs:
-            log_token = log.replace(',', '').replace(')', '').split()
-            print(log_token)
+            if dataset == 'Spark':
+                log_token = log.replace(',', '').replace(')', '').split()
+            elif dataset == 'HDFS':
+                log_token = log.replace(':', ' ').split()
+            # print(log_token)
             idx = position_dict[str(i)][0]
             ans.append(log_token[idx])
         pred_qa.append((question, ans))
@@ -71,7 +74,6 @@ def main():
         pred_ans = '---'
         ans_list = pred_qa[i][1]
         anst = answer_type[i]
-   
         if anst == 0: # add
             ans_list = filter_digits(ans_list)
             if len(ans_list) > 0:
@@ -94,14 +96,21 @@ def main():
                 pred_ans = ans_list[0]
         else:
             pred_ans = '---'
+        
         try:
-            if len(filter_logs[i]) == len(qa_info['Logs']) or pred_ans == float(qa_info['Answer']):
+            pred_ans = float(pred_ans)
+            ans = float(qa_info['Answer'])
+            if pred_ans == ans:
                 correct += 1
-                print(i, 'correct')
+            else:
+                print(i, 'False1', ans, '---', pred_ans)
         except:
-            if str(pred_ans) == str(qa_info['Answer']):
+            ans = str(qa_info['Answer'])
+            pred_ans = str(pred_ans)
+            if ans in pred_ans:
                 correct += 1
-                print(i, 'correct')
+            else:
+                print(i, 'False2', ans, '---', pred_ans)
         total += 1
         answer_list.append((qa_info['Question'], pred_ans))
 
