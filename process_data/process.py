@@ -3,6 +3,8 @@ from tqdm import tqdm
 import pandas as pd
 from utils import read_json, generate_uuid
 
+
+
 '''
     日志multihop qa数据v4 (最终版) 
 '''
@@ -112,8 +114,8 @@ def transfer2SquAD(qa_data, dataset, data_type='train'):
         answer_idx = line['answer_start']
         eventID = line['Events'][0]
         template = templates_dict[eventID]
-        
-        template_token = template.replace('/', ' ').replace(':', ' ').split(' ')
+        # HDFS 分词， 将:转为空格, 并分词
+        template_token = template.replace(':', ' ').split()
         answer_start = 0
         
         if answer_idx == -1:  # 答案是计数类型
@@ -122,8 +124,8 @@ def transfer2SquAD(qa_data, dataset, data_type='train'):
             for idx, token in enumerate(template_token):
                 if idx == answer_idx:
                     break
-                answer_start += len(token) + 1
-            print(question)
+                answer_start += len(token) + 1 # +1是空格
+            # print(question)
             answer_text = template_token[answer_idx]
             
 
@@ -203,16 +205,13 @@ def transfer2SquAD_v2(qa_data, dataset, data_type='train'):
 
 if __name__ == '__main__':
 
-    dataset = "Spark"
+    dataset = "HDFS"
 
-    # transfer_rawlog_to_logs()
-    # labeled_question_position()
-    # split_train_test(dataset)
-    # transfer2SquAD(read_json('../logs/{}/qa_{}.json'.format(dataset, 'train')), dataset, 'train')
-    # transfer2SquAD(read_json('../logs/{}/qa_{}.json'.format(dataset, 'test')), dataset, 'test')
+    split_train_test(dataset)
+    transfer2SquAD(read_json('../logs/{}/qa_{}.json'.format(dataset, 'train')), dataset, 'train')
+    transfer2SquAD(read_json('../logs/{}/qa_{}.json'.format(dataset, 'test')), dataset, 'test')
     transfer2SquAD_v2(read_json('../logs/{}/qa_{}.json'.format(dataset, 'train')), dataset, 'train')
     transfer2SquAD_v2(read_json('../logs/{}/qa_{}.json'.format(dataset, 'test')), dataset, 'test')
-    # save_question(read_json('../logs/{}/qa_{}.json'.format(dataset, 'train')), dataset, 'train')
-    # save_question(read_json('../logs/{}/qa_{}.json'.format(dataset, 'test')), dataset, 'test')
-    # labeled_question_keyword()
-    # save_multihop_qa()
+    save_question(read_json('../logs/{}/qa_{}.json'.format(dataset, 'train')), dataset, 'train')
+    save_question(read_json('../logs/{}/qa_{}.json'.format(dataset, 'test')), dataset, 'test')
+   
