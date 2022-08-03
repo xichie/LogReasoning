@@ -12,5 +12,6 @@ cd QANet-pytorch-
 python main.py --mode data --dataset $dataset
 python main.py --mode train --dataset $dataset
 cd ..
+cp QANet-pytorch-/log/*.json logs/$dataset/
 echo "========================Evaluate on $dataset======================================"
 python pipeline.py --dataset $dataset 

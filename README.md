@@ -1,5 +1,7 @@
 # LogReasoning
 ## Pipline
+运行脚本: run.sh
+
 1. 训练问题-事件匹配模型: python q2e_model.py 
 
 <img src="results/Spark/spark_match_question_event_acc.png" width=300> \
