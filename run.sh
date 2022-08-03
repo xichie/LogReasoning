@@ -11,6 +11,6 @@ echo "========================Training QEAnsPos model on $dataset===============
 cd QANet-pytorch-
 python main.py --mode data --dataset $dataset
 python main.py --mode train --dataset $dataset
-echo "========================Evaluate on $dataset======================================"
 cd ..
-python pipeline.py --dataset $dataset
+echo "========================Evaluate on $dataset======================================"
+python pipeline.py --dataset $dataset 
