@@ -23,7 +23,8 @@ nlp = lambda text: text.split()
 
 
 def word_tokenize(sent):
-    doc = nlp(sent)
+    # doc = nlp(sent)
+    doc = sent.split()
     return [token for token in doc]
 
 
@@ -108,8 +109,7 @@ def process_file(filename, data_type, word_counter, char_counter):
         source = json.load(fh)
         for article in tqdm(source["data"]):
             for para in article["paragraphs"]:
-                context = para["context"].replace(
-                    "''", '" ').replace("``", '" ')
+                context = para["context"].replace(':', ' ')
                 context_tokens = word_tokenize(context)
                 context_chars = [list(token) for token in context_tokens]
                 spans = convert_idx(context, context_tokens)  # 得到context每个token的start和end索引
@@ -191,7 +191,7 @@ def get_embedding(counter, data_type, limit=-1, emb_file=None, vec_size=None):
     emb_mat = [idx2emb_dict[idx] for idx in range(len(idx2emb_dict))]
     return emb_mat, token2idx_dict
 
-
+'''
 def convert_to_features(config, data, word2idx_dict, char2idx_dict):
     example = {}
     context, question = data
@@ -251,7 +251,7 @@ def convert_to_features(config, data, word2idx_dict, char2idx_dict):
             ques_char_idxs[i, j] = _get_char(char)
 
     return context_idxs, context_char_idxs, ques_idxs, ques_char_idxs
-
+'''
 
 def build_features(config, examples, data_type, out_file, word2idx_dict, char2idx_dict, is_test=False):
     para_limit = config.para_limit
@@ -344,8 +344,10 @@ def save(filename, obj, message=None):
 
 def preproc(config):
     dataset = config.dataset
-    train_data = '../logs/{}/squad_train.json'.format(dataset)
-    test_data = '../logs/{}/squad_test.json'.format(dataset)
+    # train_data = '../logs/{}/squad_train_v2.json'.format(dataset)  # for baseline (only contain span questions)
+    # test_data = '../logs/{}/squad_test_v2.json'.format(dataset)    # for baseline 
+    train_data = '../logs/{}/squad_train.json'.format(dataset)  # for pipeline
+    test_data = '../logs/{}/squad_test.json'.format(dataset)    # for pipeline 
     word_counter, char_counter = Counter(), Counter()
     train_examples, train_eval = process_file(train_data, "train", word_counter, char_counter)
     dev_examples, dev_eval = process_file(test_data, "dev", word_counter, char_counter)
