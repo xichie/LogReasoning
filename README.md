@@ -16,6 +16,6 @@
 |Method | LogReasoning(rule-based)| LogReasoning(model-based)|
 | :----------- | :----------- | :----------- |
 | Metric  | F1/EM | F1/EM   |
-|Spark| 0.739| 0.529|
-|HDFS| 0.381 |0.333|
+|Spark| 0.712| 0.625|
+|HDFS| 0.856 |0.616|
 
