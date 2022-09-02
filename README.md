@@ -14,10 +14,3 @@
 5. 评估QANet的结果，并保存每个问题对应答案在日志事件中的位置: cd QANet-pytorch-/ python main.py --mode test
 6. 根据4、5的结果提取问题的答案
 7. 根据问题判断应该进行的计算
-
-|Method | LogReasoning(rule-based)| LogReasoning(model-based)|
-| :----------- | :----------- | :----------- |
-| Metric  | F1/EM | F1/EM   |
-|Spark| 0.712| 0.625|
-|HDFS| 0.856 |0.616|
-
