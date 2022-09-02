@@ -90,5 +90,5 @@ if __name__ == '__main__':
     arg = argparser.parse_args()
     dataset = arg.dataset
   
-    # bert_embedding(dataset, './logs/{}/{}_2k.log_templates.csv'.format(dataset, dataset))
-    my_bert_embedding(dataset, './logs/{}/{}_2k.log_templates.csv'.format(dataset, dataset))
+    bert_embedding(dataset, './logs/{}/{}_2k.log_templates.csv'.format(dataset, dataset))
+    # my_bert_embedding(dataset, './logs/{}/{}_2k.log_templates.csv'.format(dataset, dataset))

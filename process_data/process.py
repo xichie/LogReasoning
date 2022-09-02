@@ -115,7 +115,7 @@ def transfer2SquAD(qa_data, dataset, data_type='train'):
         eventID = line['Events'][0]
         template = templates_dict[eventID]
         # HDFS 分词， 将:转为空格, 并分词
-        template_token = template.replace(':', ' ').split()
+        template_token = template.replace(':', ' ').replace('(', ' ').replace(')', ' ').replace('=', ' ').split()
         answer_start = 0
         
         if answer_idx == -1:  # 答案是计数类型
@@ -125,7 +125,7 @@ def transfer2SquAD(qa_data, dataset, data_type='train'):
                 if idx == answer_idx:
                     break
                 answer_start += len(token) + 1 # +1是空格
-            # print(question)
+            print(question)
             answer_text = template_token[answer_idx]
             
 
@@ -205,7 +205,7 @@ def transfer2SquAD_v2(qa_data, dataset, data_type='train'):
 
 if __name__ == '__main__':
 
-    dataset = "HDFS"
+    dataset = "OpenSSH"
 
     split_train_test(dataset)
     transfer2SquAD(read_json('../logs/{}/qa_{}.json'.format(dataset, 'train')), dataset, 'train')

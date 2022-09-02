@@ -5,7 +5,7 @@ import argparse
 
 # model-based
 def model_based_filter(dataset, qe):
-    stop_words = ['contain', 'free', 'is', 'of', 'in', 'by', 'the', 'a', 'an', 'can', 'be', 'on', 'from', 'to', 'take', 'up', 'free', 'that', 'for']
+    stop_words = ['when', 'from', 'contain', 'free', 'is', 'of', 'in', 'by', 'the', 'a', 'an', 'can', 'be', 'on', 'from', 'to', 'take', 'up', 'free', 'that', 'for']
     filter_logs = {}
     loss, key_words_all = evaluate(dataset)
     for i in range(len(key_words_all)):
@@ -45,8 +45,22 @@ def model_based_filter(dataset, qe):
                         break   
                 if log_flag:
                     filter_logs[q].append(log)
+            elif dataset == 'OpenSSH':
+                log_token = log_lower.split()
+                log_flag = True  # log是否包含所有关键字
+                # 判断所有kw都在log中
+                for kw in cur_kw_list:
+                    kw_flag = False
+                    for token in log_token:
+                        if kw in token:
+                            kw_flag = True
+                            break
+                    if not kw_flag:
+                        log_flag = False
+                        break   
+                if log_flag:
+                    filter_logs[q].append(log)
 
-            
     f = open('logs/{}/filter_model_based.json'.format(dataset), 'w')
     for q, logs in filter_logs.items():
         q_logs = json.dumps({'Question': q, 'Logs': logs})
@@ -155,7 +169,50 @@ def rule_based_filter_hdfs(qe) -> dict:
         f.write(q_logs + '\n')
     f.close()
     return filter_logs   
-            
+
+def rule_based_filter_openssh(qe) -> dict:
+    df = pd.read_csv('./logs/OpenSSH/OpenSSH_2k.log_structured.csv')
+    filter_logs = {}
+    for i, (q, e) in enumerate(qe.items()):
+        filter_logs[q] = []
+        logs = df[df['EventId'] == e]['Content'].to_list() # 对应事件的日志
+        # 计算问题中每个单词在logs中出现的次数
+        q_ = q.replace(':', ' ').replace('/', ' ').replace('?', '').lower()
+        q_token = q_.strip().split()
+        counter = {token: 0 for token in q_token}
+        for log in logs:
+            for token in q_token:
+                if token in log.lower():
+                    counter[token] += 1
+        counter = sorted(counter.items(), key=lambda x: x[1], reverse=True) # 排序
+        print(counter)
+        # 将问题在log中出现次数不为0的单词作为过滤条件
+        q_token = []
+        for token, count in counter:
+            if count == 0:
+                continue
+            q_token.append(token)
+        if len(q_token) == 0:  # 由于没有匹配到正确的事件，所以直接返回空列表
+            pass
+        else:
+            for log in logs:
+                flag = True
+                for token in q_token:
+                    if token not in log.lower() and token not in ['is', 'of', 'in', 'by', 'the', 'a', 'an', 'can', 'be', 'on', 'from', 'to']:
+                        flag = False
+                if flag:
+                    filter_logs[q].append(log) 
+        if len(filter_logs[q]) == 0:  # 没有通过关键字过滤，则不过滤
+            filter_logs[q] = logs
+        
+    # 保存结果               
+    f = open('logs/OpenSSH/filter_rule_based.json', 'w')
+    for q, logs in filter_logs.items():
+        q_logs = json.dumps({'Question': q, 'Logs': logs})
+        f.write(q_logs + '\n')
+    f.close()
+    return filter_logs  
+
 # 评估问题匹配日志的准确率
 def evaluate_match_qlogs_accuracy(dataset, QE2Log):
     results = []
@@ -175,16 +232,19 @@ def evaluate_match_qlogs_accuracy(dataset, QE2Log):
         err_count = 0
         for line in f.readlines():
             qa_info = json.loads(line)
-            if len(results[idx]['Logs']) == 0:
+            if len(results[idx]['Logs']) == 0:  # Q2E 错误
                 err_count += 1
-                print(idx, '--')
+                # print(idx, '--')
             else:    
                 for log in results[idx]['Logs']:
                     if log not in qa_info['Logs']:
                         err_count += 1
-                        # print(log)
+                        print(qa_info['Question'])
+                        print(qa_info['Events'][0])
+                        print(log)
+                        print('-'*20)
                         # print(qa_info['Logs'])
-                        print(idx)
+                        # print(idx)
                         break
             idx += 1
         print('QE2Log accuracy ({}): {}'.format(QE2Log, 1 - err_count / len(results)))
@@ -199,4 +259,4 @@ if __name__ == '__main__':
 
     # q2e_acc, qe = match_question_event(dataset, 'mybert')  # (question, event)
     # model_based_filter(dataset, qe)
-    evaluate_match_qlogs_accuracy(dataset)
+    evaluate_match_qlogs_accuracy(dataset, QE2Log)

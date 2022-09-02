@@ -1,0 +1,143 @@
+What is the biggest port for root when failed password from 60.2.12.12?, 65244.0
+How many times input userauth request is invalid for guest?, 3.0
+What is the status of user utsims from 112.95.230.3?, Invalid
+What is the name of the function that is used to determine if a user is redhat?, input_userauth_request
+What is the status of user nagios1?, Invalid
+What is the minimum port for root when failed password from 183.62.140.253?, 32826.0
+Who is responsible for too many authentication failures?, Disconnecting
+What is the biggest port for webmaster when failed password?, 39257.0
+What port did the password fail?, root
+I wonder the maximum port for guest when failed password?, 63270.0
+How many received disconnect from 60.2.12.12?, 4.0
+I wonder the maximum port for admin when failed password?, 64031.0
+What count failed password for user from 202.100.179.208?, 2.0
+What count input userauth request is invalid for guest?, 3.0
+What count failed password for user from 195.154.37.122?, 1.0
+What is the name of the function that is used to determine if a user default is invalid?, input_userauth_request
+What did the port 35013 ssh2 fail to send?, root
+What did the port 52276 ssh2 fail to provide?, ---
+What is the biggest port for matlab when failed password?, 46199.0
+I wonder the maximum port for anonymous when failed password?, 63514.0
+What is the smallest port for postgres when failed password?, 45073.0
+How many received disconnect from 52.80.34.196?, 5.0
+What port did the error occur on?, ---
+Did not receive what string from 123.235.32.19?, not
+How many connection closed by 194.190.163.22?, 4.0
+What count connection closed by 173.234.31.186?, 2.0
+What count input userauth request is invalid for admin?, 22.0
+What is the status of the user zhangyan?, Invalid
+How many input userauth request is invalid for webmaster?, 2.0
+What count input userauth request is invalid for inspur?, 3.0
+How many times received disconnect from 187.141.143.180?, 80.0
+How many times failed password for user from 103.207.39.16?, 0.0
+How many input userauth request is invalid for anonymous?, 2.0
+What is the address of the device that was disconnected?, ---
+How many connection closed by 181.214.87.4?, 1.0
+How many times connection closed by 212.47.254.145?, 1.0
+How many times failed password for user from 5.188.10.180?, 0.0
+What is the port number of the invalid user test?, 36060.0
+What count received disconnect from 104.192.3.34?, 1.0
+What did the webmaster fail to give to the user?, 38926.0
+What count input userauth request is invalid for postgres?, 2.0
+What count received disconnect from 123.235.32.19?, 7.0
+What is the minimum port for root when failed password from 103.99.0.122?, 49486.0
+What is the smallest port for root when failed password from 103.99.0.122?, 49486.0
+What count received disconnect from 183.136.162.51?, 2.0
+What is the location of the user that is invalid for postgres?, 187.141.143.180
+How many received disconnect from 202.100.179.208?, 2.0
+What count input userauth request is invalid for test?, 8.0
+What did the peer do to the connection?, fatal
+How many input userauth request is invalid for cisco?, 2.0
+What is the minimum port for postgres when failed password?, 45073.0
+What count connection closed by 88.147.143.242?, 2.0
+What count input userauth request is invalid for oracle?, 6.0
+How many input userauth request is invalid for admin?, 22.0
+What is the biggest port for root when failed password from 183.62.140.253?, 60948.0
+What is the minimum port for ftpuser when failed password?, 60836.0
+I wonder the minimum port for root when failed password from 60.2.12.12?, 10217.0
+What is the status of the user postgres?, ---
+What is the current location of the user that is not valid for ubuntu?, ---
+What is the maximum port for root when failed password from 112.95.230.3?, 59849.0
+What is the address of the user 123?, Invalid
+What count failed password for user from 103.207.39.16?, 0.0
+What is the location of the invalid user test2?, ---
+What port did cisco not find?, Failed
+How many failed password for user from 185.190.58.151?, 0.0
+What is the biggest port for root when failed password from 187.141.143.180?, 60924.0
+How many times input userauth request is invalid for matlab?, 3.0
+What is the maximum port for anonymous when failed password?, 63514.0
+What database did not have a password?, root
+I wonder the minimum port for guest when failed password?, 47337.0
+How many times input userauth request is invalid for 0?, 4.0
+Did I receive an identification string from 103.207.39.165?, not
+I wonder the minimum port for webmaster when failed password?, 38926.0
+What count connection closed by 212.47.254.145?, 1.0
+What count input userauth request is invalid for 1234?, 4.0
+How many input userauth request is invalid for utsims?, 1.0
+I wonder the minimum port for ftpuser when failed password?, 60836.0
+What is the biggest port for test when failed password?, 60250.0
+How many times input userauth request is invalid for deploy?, 2.0
+I wonder the minimum port for ubuntu when failed password?, 35697.0
+What is the name of the function that is used to determine if a user test is invalid?, input_userauth_request
+How many received disconnect from 123.235.32.19?, 7.0
+What did the peer reset?, ---
+I wonder the maximum port for webmaster when failed password?, 39257.0
+What is the IP address of the invalid user test9?, ---
+What count connection closed by 194.190.163.22?, 4.0
+How many input userauth request is invalid for inspur?, 3.0
+What did the port 53550 ssh2 fail to provide?, ---
+How many times received disconnect from 183.136.162.51?, 2.0
+I wonder the maximum port for matlab when failed password?, 46199.0
+How many failed password for user from 183.62.140.253?, 0.0
+What did the user 123 have a failed to enter?, ---
+How many times input userauth request is invalid for test?, 8.0
+What did the webmaster fail to provide?, Failed
+What count failed password for user from 183.136.162.51?, 2.0
+What is the minimum port for matlab when failed password?, 36060.0
+What is the minimum port for support when failed password?, 33310.0
+What is the smallest port for root when failed password from 123.235.32.19?, 40652.0
+How many times connection closed by 181.214.87.4?, 1.0
+What is the minimum port for root when failed password from 187.141.143.180?, 33314.0
+What is the smallest port for root when failed password from 187.141.143.180?, 33314.0
+What is the status of the user cyrus?, ---
+What did the port 50719 ssh2 fail to send?, ---
+What is the biggest port for admin when failed password?, 64031.0
+How many input userauth request is invalid for postgres?, 2.0
+What port is the password for fztu?, ---
+What is the current location of the user nagios?, ---
+What is the maximum port for oracle when failed password?, 53550.0
+What count failed password for user from 52.80.34.196?, 0.0
+How many times connection closed by 191.210.223.172?, 1.0
+What is the smallest port for ubuntu when failed password?, 35697.0
+What is the status of the user FILTER?, Invalid
+What is the name of the session opened for user fztu?, ---
+What did the port 47337 ssh2 fail to provide?, ---
+What is the maximum port for root when failed password from 191.210.223.172?, 31473.0
+What is the biggest port for 123 when failed password?, 62429.0
+What is the location of the invalid user butter?, Invalid
+What is the status of user nagios?, Invalid
+How many times input userauth request is invalid for oracle?, 6.0
+What is the name of the function that returns an invalid user ted?, input_userauth_request
+What port did the root password fail on?, root
+I wonder the maximum port for root when failed password from 123.235.32.19?, 57100.0
+How many times connection closed by 60.2.12.12?, 1.0
+I wonder the maximum port for 1234 when failed password?, ---
+How many failed password for user from 52.80.34.196?, 0.0
+I wonder the maximum port for ubuntu when failed password?, 48168.0
+What count failed password for user from 103.207.39.212?, 0.0
+How many failed password for user from 103.207.39.16?, 0.0
+What did ftp not receive?, password
+How many times input userauth request is invalid for test9?, 1.0
+How many times failed password for user from 173.234.31.186?, 0.0
+What is the user name of the PAM 5 user?, ---
+What is the port number of the failed user test9?, 36060.0
+What is the biggest port for default when failed password?, 41538.0
+What is the maximum port for test when failed password?, 60250.0
+What count input userauth request is invalid for anonymous?, 2.0
+What port does the user 123 come from?, Failed
+What did matlab fail to send to the user?, ---
+What is the status of user test2?, Invalid
+What is the name of the function that returns an invalid user eoor?, input_userauth_request
+What is the status of the session for user fztu?, ---
+What count received disconnect from 112.95.230.3?, 26.0
+What is the location of the user postgres1?, Invalid

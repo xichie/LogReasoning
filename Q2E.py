@@ -8,6 +8,7 @@ import pandas as pd
 from tqdm import tqdm
 from transformers import BertTokenizer, BertModel
 import argparse
+import time
 
         
 def match_question_event(dataset, similarity_metric='Jaro'):
@@ -29,7 +30,9 @@ def match_question_event(dataset, similarity_metric='Jaro'):
         bert_model.load_state_dict(torch.load('./logs/{}/mybert.pth'.format(dataset)))
     else:
         bert_model = None
-        
+
+
+    q2e_start = time.time()
     correct_count = 0
     total_count = 0
     qe = {} # question: event
@@ -42,9 +45,13 @@ def match_question_event(dataset, similarity_metric='Jaro'):
             correct_count += 1
             qe[qa_info['Question']] = most_similarity_eventIds[0]
         else:                                                # 否则，问题对应的事件为空
-            qe[qa_info['Question']] = ''                
+            qe[qa_info['Question']] = ''      
+            # print(qa_info['Question'])
+            # print(qa_info['Events'][0], '----', most_similarity_eventIds[0])          
         total_count += 1
     acc = correct_count / total_count
+    q2e_end = time.time()
+    print("Log q2e time:", (q2e_end-q2e_start))
     return acc, qe 
 
 if __name__ == '__main__':
@@ -53,13 +60,13 @@ if __name__ == '__main__':
     arg = argparser.parse_args()
     dataset = arg.dataset
     similarity_list = [
-        # "random",
-        # "Edit_Distance",
-        # "jaccard",
-        # "BM25",
-        # "Jaro",
-        # "jaro_winkler",
-        # "cosine",
+        "random",
+        "Edit_Distance",
+        "jaccard",
+        "BM25",
+        "Jaro",
+        "jaro_winkler",
+        "cosine",
         'mybert',
     ]
     result = {'similarity_metric': [], 'accuracy': []}
@@ -69,4 +76,4 @@ if __name__ == '__main__':
         result['similarity_metric'].append(similarity_metric)
         result['accuracy'].append(acc)
 
-    pd.DataFrame(result).to_csv('./results/{}/{}_match_question_event_acc.csv'.format(dataset, dataset), index=False)
+    # pd.DataFrame(result).to_csv('./results/{}/{}_match_question_event_acc.csv'.format(dataset, dataset), index=False)

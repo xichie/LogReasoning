@@ -7,6 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 import numpy as np
 import argparse
+import time
 
 '''
     标记日志中的关键词(基于模型的预测)
@@ -44,6 +45,7 @@ class QuestionDataset(Dataset):
             keywords = qa_info['keywords']
             logs = qa_info['Logs']
             label = [0] * len(question)
+            print(question)
             for kw in keywords:
                 idx = question.index(kw)
                 label[idx] = 1
@@ -162,6 +164,7 @@ def evaluate(dataset, model=None):
     return loss, key_words_all
     
 if __name__ == '__main__':
+    start = time.time()
     argparser = argparse.ArgumentParser()
     argparser.add_argument('--dataset', type=str, help='dataset to use')
     arg = argparser.parse_args()
@@ -174,11 +177,13 @@ if __name__ == '__main__':
         model.train()
         train_loss = train(model, train_loader, optimizer)
         test_loss = 0
-        if (epoch+1) % 10 == 0:
+        if (epoch+1) % 20 == 0:
             optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] / 2
             # 保存模型
             torch.save(model.state_dict(), './logs/{}/distilBert.pth'.format(dataset))
-        print('Epoch: %d, Train Loss: %.3f' % (epoch, train_loss))
+        print('QE2Log model: Epoch: %d, Train Loss: %.3f' % (epoch, train_loss))
+    end = time.time()
+    print(end - start)
     # 评估模型
     test_loss, key_words_all = evaluate(dataset, model)
     print('Epoch:{}, Train Loss:{}, Test Loss:{}'.format(epoch, train_loss, test_loss))

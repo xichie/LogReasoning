@@ -3,6 +3,7 @@ import torch
 from dataloader import QADataset, MyDataLoader
 from transformers import BertModel
 import argparse
+import time
 
 
 '''
@@ -97,6 +98,7 @@ def evaluate(model, dataloader, device='cuda'):
     return loss_total / len(dataloader)
 
 if __name__ == '__main__':
+    start = time.time()
     argparser = argparse.ArgumentParser()
     argparser.add_argument('--dataset', type=str, help='dataset to use')
     arg = argparser.parse_args()
@@ -111,6 +113,8 @@ if __name__ == '__main__':
         loss = train(model, dataloader, optimizer, criterion)
         print('Epoch: %d, Loss: %.3f' % (epoch, loss))
         # if (epoch+1) % 2 == 0:
+    end = time.time()
+    print(end - start)
     # 保存模型
     torch.save(model.state_dict(), './logs/{}/mybert.pth'.format(dataset))
 

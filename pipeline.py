@@ -1,8 +1,9 @@
+import time
 import warnings
 warnings.filterwarnings("ignore")
 
 from Q2E import match_question_event
-from QE2Log import rule_based_filter_spark, model_based_filter, rule_based_filter_hdfs, evaluate_match_qlogs_accuracy
+from QE2Log import rule_based_filter_spark, model_based_filter, rule_based_filter_hdfs, rule_based_filter_openssh, evaluate_match_qlogs_accuracy
 from QEAnsPos import get_pos
 from question_clf import evaluate
 from utils import read_json, filter_digits
@@ -26,12 +27,17 @@ def main():
     dataset = arg.dataset
     QE2Log = arg.QE2Log
 
+ 
     q2e_acc, qe = match_question_event(dataset, 'mybert')  # (question, event)
+
+    qe2log_start = time.time()
     if QE2Log == 'rule':
         if dataset == 'Spark':
             filter_logs =  rule_based_filter_spark(qe)  # (question, logs)
         elif dataset == 'HDFS':
             filter_logs =  rule_based_filter_hdfs(qe)  # (question, logs)
+        elif dataset == 'OpenSSH':
+            filter_logs =  rule_based_filter_openssh(qe)
         else:
             print('Dataset is invalid!!!')
             return
@@ -43,8 +49,12 @@ def main():
         filter_logs = {}   
         for qa_info in tqdm(read_json('./logs/{}/qa_test.json'.format(dataset))):
             filter_logs[qa_info['Question']] = qa_info['Logs']
-
+    qe2log_end = time.time()
+    start = time.time()
     position_dict = get_pos(qe, dataset) # (question, pos)
+
+    ############################Log Reasoner#####################################
+    '''
     # AnsPos2Num
     i = 1
     pred_qa = []
@@ -59,13 +69,16 @@ def main():
                 log_token = log.replace(',', '').replace(')', '').split()
             elif dataset == 'HDFS':
                 log_token = log.replace(':', ' ').split()
+            elif dataset == 'OpenSSH':
+                log_token = log.replace(':', ' ').replace('(', ' ').replace(')', ' ').replace('=', ' ').split()
+            else:
+                print('Dataset was not found!!!')
             # print(log_token)
             idx = position_dict[str(i)][0]
             ans.append(log_token[idx])
         pred_qa.append((question, ans))
         i += 1
-    
-    
+      
     # 判断答案类型
     _, answer_type = evaluate(dataset)
     total, correct = 0, 0
@@ -115,12 +128,15 @@ def main():
         answer_list.append((qa_info['Question'], pred_ans))
 
     print("EM:{}".format(correct/total))
-
+    end = time.time()
+    print("Log reasoning time:", (end-start))
+    
+    print("Log qe2log time:", (qe2log_end-qe2log_start))
     with open('./results/{}/result.csv'.format(dataset), 'w') as f:
         for q, a in answer_list:
             f.write(q + ', ' + str(a) + '\n')
 
-    
+    '''
 if __name__ == '__main__':
     main()
     # q2e_acc, qe = match_question_event('mybert')  # (question, event)

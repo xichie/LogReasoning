@@ -1,5 +1,5 @@
 # Logreasoning runing script
-dataset=Spark
+dataset=OpenSSH
 echo "========================Training Q2E model on $dataset======================================"
 python q2e_model.py --dataset $dataset
 python bert_embedding.py --dataset $dataset
