@@ -1,5 +1,5 @@
 
-# LogReasoning
+# LogSay
 ## Pipeline
 Script Execution: run.sh
 
@@ -16,7 +16,7 @@ Script Execution: run.sh
 6. Extract answers to questions based on results from steps 4 and 5
 7. Determine computations to be performed based on questions
 
-# LogReasoning
+# LogSay
 ## Pipline
 运行脚本: run.sh
 
